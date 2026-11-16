@@ -1,9 +1,9 @@
 {extends file='page.tpl'}
-{block name='page_title'}Incidencias y seguimiento{/block}
+{block name='page_title'}Seguimiento de Pedido{/block}
 {block name='page_content'}
 <section class="pscc-portal" aria-label="Portal de atención al cliente">
   <div class="pscc-hero">
-    <div><span class="pscc-eyebrow">ATENCIÓN AL CLIENTE</span><h1>Mis pedidos y asistencia</h1>
+    <div><span class="pscc-eyebrow">ATENCIÓN AL CLIENTE</span><h1>Seguimiento de Pedido</h1>
       <p>Consulta el seguimiento de tus pedidos y comunícanos cualquier incidencia con los productos comprados.</p></div>
     <a class="pscc-btn pscc-btn-light" href="{$urls.pages.my_account|escape:'htmlall':'UTF-8'}">Volver a mi cuenta</a>
   </div>
@@ -53,6 +53,9 @@
     <section class="pscc-panel" id="nueva-incidencia">
       <div class="pscc-panel-head"><div><a href="{$pscc_home|escape:'htmlall':'UTF-8'}" class="pscc-back">← Todos los pedidos</a><h2>Pedido {$pscc_order.reference|escape:'htmlall':'UTF-8'}</h2><p>Fecha: {$pscc_order.date_add|escape:'htmlall':'UTF-8'} · {$pscc_order.state_name|escape:'htmlall':'UTF-8'}</p></div>
         <span class="pscc-pill">Seguimiento: {if $pscc_order.tracking_display}{$pscc_order.tracking_display|escape:'htmlall':'UTF-8'}{else}Pendiente{/if}</span></div>
+      {if $pscc_order.tracking_url}
+        <p><a class="pscc-btn pscc-btn-outline" href="{$pscc_order.tracking_url|escape:'htmlall':'UTF-8'}" target="_blank" rel="noopener noreferrer">Consultar seguimiento del envío</a></p>
+      {/if}
       <h3>Productos comprados</h3>
       <form method="post" action="{$pscc_order_form_url|escape:'htmlall':'UTF-8'}" class="pscc-form">
         <input type="hidden" name="pscc_action" value="create">
@@ -77,13 +80,13 @@
   {/if}
 
   <section class="pscc-panel">
-    <div class="pscc-panel-head"><div><h2>Mis pedidos y seguimiento</h2><p>Selecciona un pedido para comunicar una incidencia.</p></div><i class="material-icons" aria-hidden="true">local_shipping</i></div>
+    <div class="pscc-panel-head"><div><h2>Seguimiento de Pedido</h2><p>Selecciona un pedido para comunicar una incidencia.</p></div><i class="material-icons" aria-hidden="true">local_shipping</i></div>
     {if !$pscc_orders}<div class="pscc-empty">Todavía no tienes pedidos disponibles.</div>{/if}
     <div class="pscc-order-list">
       {foreach $pscc_orders as $o}
         <article class="pscc-order-row">
           <div class="pscc-order-main"><strong>Pedido {$o.reference|escape:'htmlall':'UTF-8'}</strong><small>{$o.date_add|escape:'htmlall':'UTF-8'} · {$o.state_name|escape:'htmlall':'UTF-8'}</small></div>
-          <div class="pscc-track"><span>Seguimiento</span><strong>{if $o.tracking_display}{$o.tracking_display|escape:'htmlall':'UTF-8'}{else}Pendiente de asignación{/if}</strong></div>
+          <div class="pscc-track"><span>Seguimiento</span><strong>{if $o.tracking_display}{$o.tracking_display|escape:'htmlall':'UTF-8'}{else}Pendiente de asignación{/if}</strong>{if $o.tracking_url}<a class="pscc-tracking-link" href="{$o.tracking_url|escape:'htmlall':'UTF-8'}" target="_blank" rel="noopener noreferrer">Consultar envío ↗</a>{/if}</div>
           <a class="pscc-btn pscc-btn-outline" href="{$o.portal_url|escape:'htmlall':'UTF-8'}">Ver productos / Incidencia</a>
         </article>
       {/foreach}
