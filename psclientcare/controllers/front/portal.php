@@ -33,16 +33,63 @@ class PsclientcarePortalModuleFrontController extends ModuleFrontController
             $this->psccErrors[] = 'La sesión del formulario no es válida. Actualiza la página.';
             return;
         }
-        if (PsccRepository::recentMessages((int) $this->context->customer->id) >= 3) {
+        $action = (string) Tools::getValue('pscc_action');
+        $key = (string) Tools::getValue('pscc_request_key', '');
+        if (!in_array($action, array('create', 'reply'), true) || !PsccSubmission::validKey($key)) {
+            $this->psccErrors[] = 'El formulario ha caducado. Vuelve a abrirlo para enviar el mensaje.';
+            return;
+        }
+
+        // A browser refresh or a repeated POST must not send a second ticket
+        // or message. This check comes BEFORE the rate limit for safe retries.
+        $target = (int) Tools::getValue($action === 'create' ? 'id_order' : 'ticket_id');
+        $shopId = (int) $this->context->shop->id;
+        $customerId = (int) $this->context->customer->id;
+        $existing = PsccSubmission::find($key, $shopId, $customerId, $action, $target);
+        if ($existing > 0) {
+            $this->redirectTicket($action === 'create' ? $existing : $target, 'already_saved');
+        }
+        if (PsccRepository::recentMessages($customerId) >= 3) {
             $this->psccErrors[] = 'Se han enviado demasiados mensajes. Inténtalo más tarde.';
             return;
         }
-        $action = (string) Tools::getValue('pscc_action');
         if ($action === 'create') {
-            $this->createTicket();
-        } elseif ($action === 'reply') {
-            $this->replyTicket();
+            $this->createTicket($key);
+        } else {
+            $this->replyTicket($key);
         }
+    }
+
+    private function redirectTicket($ticketId, $notice)
+    {
+        Tools::redirect($this->context->link->getModuleLink($this->module->name, 'portal', array(
+            'ticket_id' => (int) $ticketId, 'pscc_notice' => $notice,
+        ), true));
+        exit; // explicit even when a test implementation of Tools::redirect() returns
+    }
+
+    /** Notify after committing the ticket. Failures must never turn a successful POST into a 500. */
+    private function sendStaffNotice($ticket, $items, $selected, $message, $messageId)
+    {
+        $sent = false;
+        try {
+            if (is_array($ticket) && $ticket) {
+                $sent = (bool) $this->module->getMailer()->notifyStaff($ticket, $items, $selected, $message);
+            }
+        } catch (\Throwable $e) {
+            // No ticket content, customer data or credentials in the error log.
+            try {
+                PrestaShopLogger::addLog('psclientcare: mail notification failed after ticket persistence', 2);
+            } catch (\Throwable $logError) {
+                // Preserve a successful submission even if logging fails.
+            }
+        }
+        try {
+            PsccRepository::setMessageEmailStatus((int) $messageId, $sent);
+        } catch (\Throwable $e) {
+            // Email state update must not block PRG response.
+        }
+        return $sent;
     }
 
     private function normalizedMessage()
@@ -59,7 +106,7 @@ class PsclientcarePortalModuleFrontController extends ModuleFrontController
         return true;
     }
 
-    private function createTicket()
+    private function createTicket($requestKey)
     {
         $orderId = (int) Tools::getValue('id_order');
         $shopId = (int) $this->context->shop->id;
@@ -98,22 +145,29 @@ class PsclientcarePortalModuleFrontController extends ModuleFrontController
         if ($this->psccErrors) {
             return;
         }
-        $result = PsccRepository::createTicket($orderId, $customerId, $shopId, $subject, $message, array_values($productIds));
+        $result = PsccRepository::createTicket($orderId, $customerId, $shopId, $subject, $message, array_values($productIds), $requestKey);
         if (!$result) {
             $this->psccErrors[] = 'No se ha podido guardar la incidencia. Vuelve a intentarlo.';
             return;
         }
-        $ticket = PsccRepository::getTicket($result['ticket_id'], $shopId, $customerId);
-        $sent = $this->module->getMailer()->notifyStaff($ticket, $items,
-            PsccRepository::getSelectedProducts($result['ticket_id']), $message);
-        PsccRepository::setMessageEmailStatus($result['message_id'], $sent);
-        $url = $this->context->link->getModuleLink($this->module->name, 'portal', array(
-            'ticket_id' => (int) $result['ticket_id'], 'pscc_notice' => $sent ? 'created' : 'saved_no_mail',
-        ), true);
-        Tools::redirect($url);
+        if (!empty($result['reused'])) {
+            $this->redirectTicket($result['ticket_id'], 'already_saved');
+        }
+        $sent = false;
+        try {
+            $ticket = PsccRepository::getTicket($result['ticket_id'], $shopId, $customerId);
+            $selectedProducts = PsccRepository::getSelectedProducts($result['ticket_id']);
+            $sent = $this->sendStaffNotice($ticket, $items, $selectedProducts, $message, $result['message_id']);
+        } catch (\Throwable $e) {
+            try {
+                PsccRepository::setMessageEmailStatus($result['message_id'], false);
+            } catch (\Throwable $ignored) {
+            }
+        }
+        $this->redirectTicket($result['ticket_id'], $sent ? 'created' : 'saved_no_mail');
     }
 
-    private function replyTicket()
+    private function replyTicket($requestKey)
     {
         $ticketId = (int) Tools::getValue('ticket_id');
         $ticket = PsccRepository::getTicket($ticketId, (int) $this->context->shop->id, (int) $this->context->customer->id);
@@ -125,21 +179,27 @@ class PsclientcarePortalModuleFrontController extends ModuleFrontController
         if (!$this->validMessage($message)) {
             return;
         }
-        $idMessage = PsccRepository::addMessage($ticketId, 'customer', $message);
-        if (!$idMessage) {
+        $result = PsccRepository::createReply($ticketId, (int) $this->context->customer->id,
+            (int) $this->context->shop->id, $message, $requestKey, (string) $ticket['status']);
+        if (!$result) {
             $this->psccErrors[] = 'No se ha podido guardar tu mensaje.';
             return;
         }
-        if ($ticket['status'] === 'resolved') {
-            PsccRepository::setTicketStatus($ticketId, 'open');
+        if (!empty($result['reused'])) {
+            $this->redirectTicket($ticketId, 'already_saved');
         }
-        $items = PsccRepository::getOrderItems($ticket['id_order']);
-        $sent = $this->module->getMailer()->notifyStaff($ticket, $items,
-            PsccRepository::getSelectedProducts($ticketId), $message);
-        PsccRepository::setMessageEmailStatus($idMessage, $sent);
-        Tools::redirect($this->context->link->getModuleLink($this->module->name, 'portal', array(
-            'ticket_id' => $ticketId, 'pscc_notice' => $sent ? 'reply' : 'saved_no_mail',
-        ), true));
+        $sent = false;
+        try {
+            $items = PsccRepository::getOrderItems($ticket['id_order']);
+            $selected = PsccRepository::getSelectedProducts($ticketId);
+            $sent = $this->sendStaffNotice($ticket, $items, $selected, $message, $result['message_id']);
+        } catch (\Throwable $e) {
+            try {
+                PsccRepository::setMessageEmailStatus($result['message_id'], false);
+            } catch (\Throwable $ignored) {
+            }
+        }
+        $this->redirectTicket($ticketId, $sent ? 'reply' : 'saved_no_mail');
     }
 
     public function initContent()
@@ -192,6 +252,8 @@ class PsclientcarePortalModuleFrontController extends ModuleFrontController
             'pscc_order_form_url' => $selectedOrder ? $this->context->link->getModuleLink($this->module->name, 'portal', array('id_order' => $orderId), true) : '',
             'pscc_ticket_form_url' => $selectedTicket ? $this->context->link->getModuleLink($this->module->name, 'portal', array('ticket_id' => $ticketId), true) : '',
             'pscc_token' => Tools::getToken(false),
+            'pscc_request_create' => PsccSubmission::newKey(),
+            'pscc_request_reply' => PsccSubmission::newKey(),
             'pscc_orders' => $orders,
             'pscc_tickets' => $tickets,
             'pscc_order' => $selectedOrder,
