@@ -53,3 +53,32 @@
 @media(max-width:900px){.pscc-portal .pscc-order-row{flex-wrap:wrap}.pscc-portal .pscc-order-main{flex:1 1 45%}.pscc-portal .pscc-track{flex:1 1 45%}.pscc-portal .pscc-order-row>.pscc-btn{flex:1 1 100%}}
 @media(max-width:640px){.pscc-portal .pscc-hero{border-radius:14px}.pscc-portal .pscc-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.pscc-portal .pscc-panel{padding:18px}.pscc-portal .pscc-order-row{padding:16px 0}.pscc-portal .pscc-order-main,.pscc-portal .pscc-track,.pscc-portal .pscc-order-row>.pscc-btn{flex:1 1 100%}.pscc-portal .pscc-hero .pscc-btn{width:100%}.pscc-portal .pscc-quicknav a{flex:1;justify-content:center}.pscc-portal .pscc-tracking-card{padding:16px}}
 @media(prefers-reduced-motion:reduce){.pscc-portal .pscc-btn{transition:none}.pscc-portal *{scroll-behavior:auto!important}}
+
+/* v0.1.4: Classic account layout parity + explicit separation to resist theme styles. */
+.pscc-portal .pscc-overview{display:grid;grid-template-columns:minmax(0,1fr);gap:22px;clear:both;margin:22px 0 26px;width:100%;min-width:0}
+.pscc-portal .pscc-overview .pscc-quicknav{display:flex!important;position:static!important;float:none!important;align-items:stretch;flex-wrap:wrap;gap:12px!important;margin:0!important;min-height:48px;width:100%;padding:0!important;clear:both}
+.pscc-portal .pscc-overview .pscc-quicknav .pscc-quicklink{display:inline-flex!important;align-items:center;justify-content:center;gap:9px;flex:0 0 auto;min-height:48px!important;padding:12px 20px!important;margin:0!important;background:#fff!important;border:1.5px solid #cbdce6!important;border-radius:12px!important;color:#125779!important;text-decoration:none!important;font-weight:700;line-height:1.2;box-shadow:0 3px 12px rgba(18,46,70,.04)}
+.pscc-portal .pscc-overview .pscc-quicknav .pscc-quicklink:hover{background:#eaf5f9!important;border-color:#125779!important}
+.pscc-portal .pscc-overview .pscc-quicknav .pscc-quicklink .material-icons{font-size:20px;line-height:1;flex:none}
+.pscc-portal .pscc-overview .pscc-summary{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,2fr);gap:14px!important;position:static!important;float:none!important;margin:0!important;width:100%;clear:both;min-width:0}
+.pscc-portal .pscc-overview .pscc-summary>div{min-width:0;min-height:108px;padding:20px;justify-content:center;box-sizing:border-box}
+.pscc-portal .pscc-panel-orders .pscc-order-list--tracking{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+.pscc-portal .pscc-panel-orders .pscc-shipment{display:grid!important;grid-template-columns:minmax(0,1.05fr) minmax(0,1.25fr) minmax(220px,.85fr);gap:24px;align-items:start!important;padding:22px!important;border:1px solid #d8e5ee;border-radius:14px;background:#fbfdfe;min-width:0}
+.pscc-portal .pscc-panel-orders .pscc-shipment:hover{background:#f3f9fc;border-color:#b4d1df}
+.pscc-portal .pscc-shipment .pscc-order-main,.pscc-portal .pscc-shipment .pscc-track{display:flex;flex-direction:column;gap:7px;flex:none!important;min-width:0;width:100%;max-width:100%}
+.pscc-portal .pscc-shipment .pscc-order-kicker{font-size:11px;color:#516a7d;letter-spacing:.09em;font-weight:800}
+.pscc-portal .pscc-shipment .pscc-order-main strong{font-size:17px;line-height:1.25;overflow-wrap:anywhere;color:#14334b}
+.pscc-portal .pscc-shipment .pscc-order-main small{font-size:12px;line-height:1.45}
+.pscc-portal .pscc-shipment .pscc-order-state{display:inline-flex;align-self:flex-start;background:#e9f2f6;border:1px solid #c8dfe9;border-radius:999px;padding:5px 10px;font-size:12px;color:#22526e;font-weight:700;line-height:1.25;overflow-wrap:anywhere}
+.pscc-portal .pscc-shipment .pscc-tracking-label{font-size:12px;color:#516a7d;font-weight:700}
+.pscc-portal .pscc-shipment .pscc-tracking-code{font-size:15px;color:#17374e;overflow-wrap:anywhere;line-height:1.35}
+.pscc-portal .pscc-shipment .pscc-tracking-address-label{font-size:12px;margin-top:3px;color:#516a7d;font-weight:700}
+.pscc-portal .pscc-shipment .pscc-tracking-address{display:block!important;width:100%;font-size:13px;overflow-wrap:anywhere;text-decoration:underline;text-underline-offset:3px;color:#125779}
+.pscc-portal .pscc-shipment .pscc-tracking-pending{color:#5d7282;font-size:12px;line-height:1.4}
+.pscc-portal .pscc-shipment .pscc-order-actions{display:flex;flex-direction:column;justify-content:center;gap:10px;min-width:0;width:100%}
+.pscc-portal .pscc-shipment .pscc-order-actions .pscc-btn{width:100%;max-width:100%;min-width:0;overflow-wrap:anywhere;white-space:normal;min-height:46px}
+.pscc-portal .pscc-shipment .pscc-btn-shipment{background:#125779;color:#fff!important}
+.pscc-portal .pscc-shipment .pscc-btn-shipment:hover{background:#0d4668}
+.pscc-portal #pscc-orders,.pscc-portal #pscc-tickets{scroll-margin-top:28px}
+@media(max-width:920px){.pscc-portal .pscc-panel-orders .pscc-shipment{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.pscc-portal .pscc-shipment .pscc-order-actions{grid-column:1/-1;flex-direction:row}.pscc-portal .pscc-shipment .pscc-order-actions .pscc-btn{width:auto;flex:1 1 50%}}
+@media(max-width:640px){.pscc-portal .pscc-overview{gap:16px;margin:18px 0 22px}.pscc-portal .pscc-overview .pscc-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.pscc-portal .pscc-overview .pscc-summary-note{grid-column:1/-1}.pscc-portal .pscc-overview .pscc-summary>div{min-height:94px;padding:14px}.pscc-portal .pscc-overview .pscc-quicknav .pscc-quicklink{flex:1 1 100%;width:100%;justify-content:flex-start}.pscc-portal .pscc-panel-orders .pscc-shipment{grid-template-columns:minmax(0,1fr);gap:15px;padding:16px!important}.pscc-portal .pscc-shipment .pscc-order-actions{grid-column:1;flex-direction:column}.pscc-portal .pscc-shipment .pscc-order-actions .pscc-btn{width:100%}}

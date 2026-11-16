@@ -18,14 +18,16 @@
   {elseif $pscc_notice == 'saved_no_mail'}
     <div class="pscc-alert pscc-alert-warning" role="alert">Tu mensaje está guardado, pero no se pudo enviar la notificación por correo. La tienda puede consultarlo en administración.</div>
   {/if}
-  <nav class="pscc-quicknav" aria-label="Secciones del portal">
-    <a href="#pscc-orders">Mis pedidos</a>
-    <a href="#pscc-tickets">Mis incidencias</a>
-  </nav>
-  <div class="pscc-summary">
-    <div><strong>{$pscc_orders|count}</strong><span>Pedidos recientes</span></div>
-    <div><strong>{$pscc_tickets|count}</strong><span>Incidencias</span></div>
-    <div class="pscc-summary-note"><i class="material-icons" aria-hidden="true">verified_user</i><span>Solo puedes acceder a tus propios pedidos.</span></div>
+  <div class="pscc-overview">
+    <nav class="pscc-quicknav" aria-label="Ir a una sección de tu cuenta">
+      <a class="pscc-quicklink" href="#pscc-orders"><i class="material-icons" aria-hidden="true">inventory_2</i><span>Mis pedidos</span></a>
+      <a class="pscc-quicklink" href="#pscc-tickets"><i class="material-icons" aria-hidden="true">forum</i><span>Mis incidencias</span></a>
+    </nav>
+    <div class="pscc-summary" aria-label="Resumen de tu actividad">
+      <div class="pscc-summary-card"><strong>{$pscc_orders|count}</strong><span>Pedidos recientes</span></div>
+      <div class="pscc-summary-card"><strong>{$pscc_tickets|count}</strong><span>Incidencias</span></div>
+      <div class="pscc-summary-note"><i class="material-icons" aria-hidden="true">verified_user</i><span>Solo puedes acceder a tus propios pedidos.</span></div>
+    </div>
   </div>
 
   {if $pscc_ticket}
@@ -92,15 +94,34 @@
     </section>
   {/if}
 
-  <section class="pscc-panel" id="pscc-orders" aria-labelledby="pscc-orders-heading">
-    <div class="pscc-panel-head"><div><h2 id="pscc-orders-heading">Seguimiento de Pedido</h2><p>Selecciona un pedido para comunicar una incidencia.</p></div><i class="material-icons" aria-hidden="true">local_shipping</i></div>
+  <section class="pscc-panel pscc-panel-orders" id="pscc-orders" aria-labelledby="pscc-orders-heading">
+    <div class="pscc-panel-head"><div><h2 id="pscc-orders-heading">Seguimiento de Pedido</h2><p>Consulta el envío o selecciona un pedido para ver sus productos y abrir una incidencia.</p></div><i class="material-icons" aria-hidden="true">local_shipping</i></div>
     {if !$pscc_orders}<div class="pscc-empty">Todavía no tienes pedidos disponibles.</div>{/if}
-    <div class="pscc-order-list">
+    <div class="pscc-order-list pscc-order-list--tracking">
       {foreach $pscc_orders as $o}
-        <article class="pscc-order-row">
-          <div class="pscc-order-main"><strong>Pedido {$o.reference|escape:'htmlall':'UTF-8'}</strong><small>{$o.date_add|escape:'htmlall':'UTF-8'} · {$o.state_name|escape:'htmlall':'UTF-8'}</small></div>
-          <div class="pscc-track"><span>Seguimiento</span><strong>{if $o.tracking_display}{$o.tracking_display|escape:'htmlall':'UTF-8'}{else}Pendiente de asignación{/if}</strong>{if $o.tracking_url}<span class="pscc-tracking-address-label">URL de seguimiento</span><a class="pscc-tracking-address" href="{$o.tracking_url|escape:'htmlall':'UTF-8'}" target="_blank" rel="noopener noreferrer">{$o.tracking_url|escape:'htmlall':'UTF-8'}</a><a class="pscc-tracking-link" href="{$o.tracking_url|escape:'htmlall':'UTF-8'}" target="_blank" rel="noopener noreferrer" aria-label="Abrir seguimiento del pedido {$o.reference|escape:'htmlall':'UTF-8'} en otra pestaña">Consultar envío <span aria-hidden="true">↗</span></a>{/if}</div>
-          <a class="pscc-btn pscc-btn-outline" href="{$o.portal_url|escape:'htmlall':'UTF-8'}">Ver productos / Incidencia</a>
+        <article class="pscc-order-row pscc-shipment" aria-label="Pedido {$o.reference|escape:'htmlall':'UTF-8'}">
+          <div class="pscc-order-main">
+            <span class="pscc-order-kicker">PEDIDO</span>
+            <strong>{$o.reference|escape:'htmlall':'UTF-8'}</strong>
+            <small>{$o.date_add|escape:'htmlall':'UTF-8'}</small>
+            <span class="pscc-order-state">{$o.state_name|escape:'htmlall':'UTF-8'}</span>
+          </div>
+          <div class="pscc-track">
+            <span class="pscc-tracking-label">Número de seguimiento</span>
+            <strong class="pscc-tracking-code">{if $o.tracking_display}{$o.tracking_display|escape:'htmlall':'UTF-8'}{else}Pendiente de asignación{/if}</strong>
+            {if $o.tracking_url}
+              <span class="pscc-tracking-address-label">URL del transportista</span>
+              <a class="pscc-tracking-address" href="{$o.tracking_url|escape:'htmlall':'UTF-8'}" target="_blank" rel="noopener noreferrer" aria-label="URL del transportista para el pedido {$o.reference|escape:'htmlall':'UTF-8'} (abre otra pestaña)">{$o.tracking_url|escape:'htmlall':'UTF-8'}</a>
+            {else}
+              <span class="pscc-tracking-pending">Enlace del transportista no disponible</span>
+            {/if}
+          </div>
+          <div class="pscc-order-actions">
+            {if $o.tracking_url}
+              <a class="pscc-btn pscc-btn-shipment" href="{$o.tracking_url|escape:'htmlall':'UTF-8'}" target="_blank" rel="noopener noreferrer" aria-label="Consultar seguimiento del pedido {$o.reference|escape:'htmlall':'UTF-8'} en otra pestaña">Seguir envío <span aria-hidden="true">↗</span></a>
+            {/if}
+            <a class="pscc-btn pscc-btn-outline" href="{$o.portal_url|escape:'htmlall':'UTF-8'}" aria-label="Ver productos y abrir incidencia del pedido {$o.reference|escape:'htmlall':'UTF-8'}">Ver productos e incidencias</a>
+          </div>
         </article>
       {/foreach}
     </div>

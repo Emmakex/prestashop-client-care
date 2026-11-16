@@ -73,6 +73,8 @@ class PsccAdmin
                     $error = 'Pedido no encontrado en esta tienda.';
                 } elseif (Tools::strlen($raw) < 3 || Tools::strlen($raw) > 160 || preg_match('/[<>\x00-\x1F\x7F]/', $raw)) {
                     $error = 'El seguimiento debe contener entre 3 y 160 caracteres válidos.';
+                } elseif (preg_match('~^(?:https?://|www\.)~i', $raw)) {
+                    $error = 'Has escrito una URL en el campo Código. Introduce el número de seguimiento como código y pega el enlace en URL del transportista.';
                 } elseif (!PsccRepository::isValidTrackingUrl($trackingUrl)) {
                     $error = 'La URL de seguimiento debe ser un enlace HTTP o HTTPS válido (máximo 2048 caracteres).';
                 } elseif (PsccRepository::setTracking($orderId, $shopId, $raw, $trackingUrl, (int) $ctx->employee->id)) {
@@ -128,7 +130,8 @@ class PsccAdmin
         $out .= '<section class="panel"><h3>Seguimiento de Pedido</h3><form method="post" action="' . self::e($baseUrl) . '">';
         $out .= self::hidden($csrf, 'tracking');
         $out .= '<label for="pscc_order_id">ID interno de pedido (consulta la tabla de abajo)</label><input id="pscc_order_id" type="number" min="1" name="pscc_order_id" required>'; 
-        $out .= '<label for="pscc_tracking_code">Código de seguimiento (manual)</label><input id="pscc_tracking_code" type="text" maxlength="160" name="pscc_tracking_code" required>';
+        $out .= '<label for="pscc_tracking_code">Número o código de seguimiento</label><input id="pscc_tracking_code" type="text" maxlength="160" name="pscc_tracking_code" aria-describedby="pscc-code-help" placeholder="Ej.: 123456789AB" required>';
+        $out .= '<p class="muted" id="pscc-code-help">Introduce aquí solo el código del transportista. Si tienes un enlace web, colócalo en el campo siguiente.</p>';
         $out .= '<label for="pscc_tracking_url">URL de seguimiento del transportista (opcional)</label><input id="pscc_tracking_url" type="url" maxlength="2048" name="pscc_tracking_url" aria-describedby="pscc-url-help" placeholder="https://transportista.example/seguimiento/..."><p class="muted" id="pscc-url-help">El cliente podrá ver la URL completa y abrir el enlace desde Seguimiento de Pedido. Utiliza una URL completa con https:// (o http://).</p>';
         $out .= '<div><button type="submit">Guardar seguimiento</button></div></form>';
         $out .= '<h4>Últimos 30 pedidos</h4><div style="overflow-x:auto"><table><thead><tr><th>ID</th><th>N.º pedido</th><th>Cliente</th><th>Seguimiento manual</th><th>Enlace</th><th>Fecha</th></tr></thead><tbody>';
