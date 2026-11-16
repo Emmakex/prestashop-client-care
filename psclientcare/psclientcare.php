@@ -19,13 +19,13 @@ class Psclientcare extends Module
     {
         $this->name = 'psclientcare';
         $this->tab = 'front_office_features';
-        $this->version = '0.1.1';
+        $this->version = '0.1.2';
         $this->author = 'Emmakex';
         $this->need_instance = 0;
         $this->bootstrap = true;
         $this->ps_versions_compliancy = array('min' => '1.7.8.0', 'max' => '9.99.99');
         parent::__construct();
-        $this->displayName = $this->l('Portal del cliente: incidencias y seguimiento');
+        $this->displayName = $this->l('Seguimiento de Pedido');
         $this->description = $this->l('Incidencias asociadas a pedidos y seguimiento manual, desde la cuenta del cliente.');
         $this->confirmUninstall = $this->l('Las incidencias existentes se conservarán en la base de datos por seguridad.');
     }
@@ -81,6 +81,7 @@ class Psclientcare extends Module
                 `id_order` INT UNSIGNED NOT NULL,
                 `id_shop` INT UNSIGNED NOT NULL,
                 `tracking_number` VARCHAR(160) NOT NULL,
+                `tracking_url` VARCHAR(2048) NOT NULL DEFAULT \'\',
                 `source` VARCHAR(20) NOT NULL DEFAULT \'manual\',
                 `id_employee` INT UNSIGNED NOT NULL DEFAULT 0,
                 `date_upd` DATETIME NOT NULL,
@@ -93,7 +94,22 @@ class Psclientcare extends Module
                 return false;
             }
         }
-        return true;
+        return $this->ensureTrackingUrlSchema();
+    }
+
+    /** Also handles a fresh install over tables retained from an older uninstall. */
+    public function ensureTrackingUrlSchema()
+    {
+        $table = _DB_PREFIX_ . 'pscc_tracking';
+        $columns = Db::getInstance()->executeS("SHOW COLUMNS FROM `" . $table . "` LIKE 'tracking_url'");
+        if ($columns === false) {
+            return false;
+        }
+        if (!empty($columns)) {
+            return true;
+        }
+
+        return Db::getInstance()->execute("ALTER TABLE `" . $table . "` ADD `tracking_url` VARCHAR(2048) NOT NULL DEFAULT '' AFTER `tracking_number`");
     }
 
     public function hookDisplayCustomerAccount($params)
