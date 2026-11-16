@@ -27,18 +27,21 @@ jobs:
           php tests/migration-test.php
       - name: Verify version and migration packaged
         run: |
-          grep -Fq "\$this->version = '0.1.5';" psclientcare/psclientcare.php
+          grep -Fq "\$this->version = '0.1.6';" psclientcare/psclientcare.php
           grep -q 'function upgrade_module_0_1_2' psclientcare/upgrade/upgrade-0.1.2.php
           test -f psclientcare/config.xml
           grep -q 'function upgrade_module_0_1_3' psclientcare/upgrade/upgrade-0.1.3.php
           grep -q 'function upgrade_module_0_1_4' psclientcare/upgrade/upgrade-0.1.4.php
           grep -q 'function upgrade_module_0_1_5' psclientcare/upgrade/upgrade-0.1.5.php
+          grep -q 'function upgrade_module_0_1_6' psclientcare/upgrade/upgrade-0.1.6.php
       - name: UX, author and mail configuration regression
         run: php tests/metadata-and-ux.php
       - name: Idempotency and mail failure regression
         run: |
           php tests/idempotency.php
           php tests/mail-failure.php
+      - name: Archive and grouped-order history regression
+        run: php tests/archive-and-order-history.php
       - name: Dashboard layout regression
         run: php tests/dashboard-layout.php
       - name: Check module entry and guards
