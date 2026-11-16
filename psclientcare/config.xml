@@ -2,9 +2,10 @@
 <module>
     <name>psclientcare</name>
     <displayName><![CDATA[Seguimiento de Pedido]]></displayName>
-    <version><![CDATA[0.1.2]]></version>
+    <version><![CDATA[0.1.3]]></version>
     <description><![CDATA[Seguimiento manual de pedidos con enlace del transportista e incidencias de clientes.]]></description>
-    <author><![CDATA[Emmakex]]></author>
+    <author><![CDATA[Eduardo Yauri]]></author>
+    <author_uri><![CDATA[https://www.eduardoyauriluna.com]]></author_uri>
     <tab><![CDATA[front_office_features]]></tab>
     <confirmUninstall><![CDATA[Las incidencias existentes se conservarán en la base de datos por seguridad.]]></confirmUninstall>
 </module>
