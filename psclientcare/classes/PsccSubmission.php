@@ -22,7 +22,7 @@ class PsccSubmission
 
     public static function installSchema()
     {
-        return Db::getInstance()->execute('CREATE TABLE IF NOT EXISTS \``' . _DB_PREFIX_ . 'pscc_submission\` (
+        return Db::getInstance()->execute('CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'pscc_submission` (
             `request_key` CHAR(32) NOT NULL,
             `id_shop` INT UNSIGNED NOT NULL,
             `id_customer` INT UNSIGNED NOT NULL,
