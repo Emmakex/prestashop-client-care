@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module>
+    <name>psclientcare</name>
+    <displayName><![CDATA[Seguimiento de Pedido]]></displayName>
+    <version><![CDATA[0.1.2]]></version>
+    <description><![CDATA[Seguimiento manual de pedidos con enlace del transportista e incidencias de clientes.]]></description>
+    <author><![CDATA[Emmakex]]></author>
+    <tab><![CDATA[front_office_features]]></tab>
+    <confirmUninstall><![CDATA[Las incidencias existentes se conservarán en la base de datos por seguridad.]]></confirmUninstall>
+</module>
