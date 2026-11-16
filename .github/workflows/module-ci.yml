@@ -1,0 +1,35 @@
+name: Module CI
+on:
+  push:
+    branches: [main, 'feat/**']
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Require module source
+        run: |
+          test -f psclientcare/psclientcare.php || { echo "Module source has not been committed"; exit 1; }
+      - name: PHP syntax
+        run: |
+          find psclientcare -type f -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Check module entry and guards
+        run: |
+          grep -q "class Psclientcare extends Module" psclientcare/psclientcare.php
+          grep -q "displayCustomerAccount" psclientcare/psclientcare.php
+          grep -q "id_customer" psclientcare/classes/PsccRepository.php
+          grep -q "id_shop" psclientcare/classes/PsccRepository.php
+      - name: Build installable ZIP
+        run: |
+          mkdir -p dist
+          zip -q -r dist/psclientcare-ci.zip psclientcare/
+          unzip -t dist/psclientcare-ci.zip
+      - name: Upload installable ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: psclientcare-ci
+          path: dist/psclientcare-ci.zip
