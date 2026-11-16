@@ -1,4 +1,4 @@
-# PS Client Care — v0.1.0 (beta instalable)
+# PS Client Care — v0.1.1 (beta instalable)
 
 Módulo **independiente** para PrestaShop; no requiere Salesforce, CRM externo, overrides ni cambios en la base del core.
 
@@ -13,10 +13,14 @@ Módulo **independiente** para PrestaShop; no requiere Salesforce, CRM externo, 
 - Prioridad de visualización de tracking: **código manual del módulo**, después código nativo `order_carrier` si existe, después «Pendiente». La escritura manual **no altera** tablas de envío nativas.
 - Correos en plantillas `es`, `en`, `ca`, `pt`; se usa el email transaccional configurado en PrestaShop. Notificaciones de apertura/respuesta del cliente a la tienda y respuesta del personal al cliente.
 
+## Actualización desde v0.1.0
+
+Sube el ZIP v0.1.1 desde el gestor de módulos o utiliza la actualización habitual de PrestaShop. **No desinstales v0.1.0**: los pedidos, las incidencias y los códigos de seguimiento conservan sus tablas. El cambio se limita a validar de forma estable el token de los formularios administrativos. Vuelve a cargar la página de configuración tras actualizar.
+
 ## Instalación
 
 1. Haz una copia de seguridad de pruebas de la tienda.
-2. En **Back Office → Módulos → Gestor de módulos → Subir un módulo**, instala el ZIP `psclientcare-v0.1.0.zip` tal cual, con la carpeta `psclientcare/` en su raíz.
+2. En **Back Office → Módulos → Gestor de módulos → Subir un módulo**, instala el ZIP `psclientcare-v0.1.1.zip` tal cual, con la carpeta `psclientcare/` en su raíz.
 3. Ve a **Configurar** y comprueba/cambia el email de atención al cliente.
 4. Comprueba el correo transaccional/SMTP de PrestaShop enviando un correo de prueba desde su configuración.
 5. Con una cuenta cliente con pedidos, abre **Mi cuenta → Incidencias y seguimiento** y crea una incidencia de prueba.
@@ -30,7 +34,7 @@ Módulo **independiente** para PrestaShop; no requiere Salesforce, CRM externo, 
 - Las incidencias se guardan primero y **después** se intenta el envío por correo. Si PrestaShop no acepta el correo, el mensaje **se conserva** con `email_status=failed`; **no existe reintento automático en esta versión**.
 - Para evitar modificaciones accidentales, desinstalar el módulo **conserva las tablas y las conversaciones**. El responsable deberá definir una política de conservación y supresión RGPD; no borres la base de datos sin exportar primero lo legalmente necesario.
 - Fase 1 limitada a una tienda activa por contexto de administración. Si usas multitienda, selecciona una tienda concreta al configurar. No se garantiza que el hook exista en un tema personalizado; en ese caso añade `{hook h='displayCustomerAccount'}` donde corresponda.
-- No incluye adjuntos, SLA, notificaciones de tracking, enlace dinámico del transportista, paginación avanzada ni transportistas automatizados. Quedan fuera de alcance de v0.1.0.
+- No incluye adjuntos, SLA, notificaciones de tracking, enlace dinámico del transportista, paginación avanzada ni transportistas automatizados. Quedan fuera de alcance de v0.1.1.
 - Compatibilidad **objetivo**, no certificada en entorno real: PrestaShop `1.7.8.x`, `8.x`, `9.x`; PHP según versión de PrestaShop. Las pruebas de sintaxis no sustituyen instalación/flujo SMTP en una tienda de pruebas.
 
 ## Arquitectura de datos
