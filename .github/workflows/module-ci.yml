@@ -27,9 +27,12 @@ jobs:
           php tests/migration-test.php
       - name: Verify version and migration packaged
         run: |
-          grep -Fq "\$this->version = '0.1.2';" psclientcare/psclientcare.php
+          grep -Fq "\$this->version = '0.1.3';" psclientcare/psclientcare.php
           grep -q 'function upgrade_module_0_1_2' psclientcare/upgrade/upgrade-0.1.2.php
           test -f psclientcare/config.xml
+          grep -q 'function upgrade_module_0_1_3' psclientcare/upgrade/upgrade-0.1.3.php
+      - name: UX, author and mail configuration regression
+        run: php tests/metadata-and-ux.php
       - name: Check module entry and guards
         run: |
           grep -q "class Psclientcare extends Module" psclientcare/psclientcare.php
