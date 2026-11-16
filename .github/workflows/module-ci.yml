@@ -17,6 +17,8 @@ jobs:
       - name: PHP syntax
         run: |
           find psclientcare -type f -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Back Office CSRF regression
+        run: php tests/admin-csrf.php
       - name: Check module entry and guards
         run: |
           grep -q "class Psclientcare extends Module" psclientcare/psclientcare.php
