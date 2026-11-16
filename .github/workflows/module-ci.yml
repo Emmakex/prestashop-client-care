@@ -19,6 +19,15 @@ jobs:
           find psclientcare -type f -name '*.php' -print0 | xargs -0 -n1 php -l
       - name: Back Office CSRF regression
         run: php tests/admin-csrf.php
+      - name: Tracking URL and upgrade regression
+        run: |
+          php tests/tracking-url-test.php
+          php tests/migration-test.php
+      - name: Verify version and migration packaged
+        run: |
+          grep -Fq "\$this->version = '0.1.2';" psclientcare/psclientcare.php
+          grep -q 'function upgrade_module_0_1_2' psclientcare/upgrade/upgrade-0.1.2.php
+          test -f psclientcare/config.xml
       - name: Check module entry and guards
         run: |
           grep -q "class Psclientcare extends Module" psclientcare/psclientcare.php
