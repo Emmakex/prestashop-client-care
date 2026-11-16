@@ -11,3 +11,45 @@
 .pscc-form{display:flex;flex-direction:column;align-items:flex-start;gap:8px}.pscc-form label{color:var(--pscc-ink);font-weight:700;margin-top:10px}.pscc-form input[type=text],.pscc-form textarea{display:block;width:100%;background:white;color:var(--pscc-ink);border:1px solid #9dacb9;border-radius:6px;padding:12px;font:inherit}.pscc-form .pscc-products{width:100%}.pscc-form button{margin-top:8px}
 .pscc-thread{display:flex;flex-direction:column;gap:12px;margin:20px 0}.pscc-message{width:min(90%,750px);padding:16px;border-radius:10px;background:#eff5fa;border:1px solid #d6e6f1}.pscc-from-customer{margin-left:auto;background:#f3f8f3;border-color:#d5e9da}.pscc-message-head{display:flex;justify-content:space-between;gap:16px;font-size:12px}.pscc-message-head time{color:var(--pscc-muted)}.pscc-message p{white-space:normal;overflow-wrap:anywhere;margin:10px 0 0}.pscc-alert{padding:13px 16px;border-radius:8px;margin:10px 0 16px}.pscc-alert-success{background:#e9f8ef;color:#175738}.pscc-alert-warning{background:#fff5df;color:#725018}.pscc-alert-error{background:#fff0f0;color:#7b2424}
 @media(max-width:760px){.pscc-hero{padding:24px;flex-direction:column;align-items:flex-start}.pscc-hero h1{font-size:24px}.pscc-summary{grid-template-columns:1fr 1fr}.pscc-summary-note{grid-column:1/-1}.pscc-panel{padding:17px}.pscc-order-row{align-items:stretch;flex-wrap:wrap;gap:10px}.pscc-order-main{flex-basis:100%}.pscc-track{flex:1}.pscc-order-row .pscc-btn{flex:1}.pscc-message{width:100%}}
+
+/* v0.1.3: premium, responsive and accessible refinements. All rules scoped to the module. */
+.pscc-portal{--pscc-ink:#112d43;--pscc-blue:#125779;--pscc-muted:#4b6477;--pscc-line:#d9e4eb;font-family:inherit;line-height:1.55}
+.pscc-portal .pscc-hero{position:relative;overflow:hidden;background:linear-gradient(122deg,#102d45 0%,#174b6b 65%,#236c81 100%);border-radius:18px;padding:clamp(24px,4vw,42px);box-shadow:0 18px 35px rgba(19,52,75,.16)}
+.pscc-portal .pscc-hero:after{content:"";position:absolute;right:-90px;bottom:-140px;width:300px;height:300px;border:1px solid rgba(255,255,255,.16);border-radius:50%;pointer-events:none}
+.pscc-portal .pscc-hero>*,.pscc-portal .pscc-hero .pscc-btn{position:relative;z-index:1}
+.pscc-portal .pscc-hero h1{font-size:clamp(25px,3vw,34px);letter-spacing:-.025em;line-height:1.2}
+.pscc-portal .pscc-quicknav{display:flex;gap:8px;margin:18px 0 14px;flex-wrap:wrap}
+.pscc-portal .pscc-quicknav a{display:inline-flex;align-items:center;min-height:44px;padding:9px 16px;border:1px solid var(--pscc-line);border-radius:999px;background:#fff;color:var(--pscc-blue);font-weight:700;text-decoration:none}
+.pscc-portal .pscc-quicknav a:hover{border-color:var(--pscc-blue);background:#eef7fa}
+.pscc-portal .pscc-panel{border-radius:16px;box-shadow:0 8px 28px rgba(18,46,70,.055)}
+.pscc-portal .pscc-panel-head h2{font-size:clamp(19px,2.3vw,23px);letter-spacing:-.015em}
+.pscc-portal .pscc-summary>div{border-radius:13px;box-shadow:0 4px 16px rgba(18,46,70,.04)}
+.pscc-portal .pscc-summary strong{font-variant-numeric:tabular-nums}
+.pscc-portal .pscc-order-row{padding:20px 8px;gap:20px;align-items:flex-start}
+.pscc-portal .pscc-order-row:hover{background:#f8fbfd}
+.pscc-portal .pscc-order-main{min-width:0;flex:1.2}
+.pscc-portal .pscc-track{min-width:0;flex:1.3;max-width:100%}
+.pscc-portal .pscc-track strong{font-size:14px}
+.pscc-portal .pscc-tracking-card{border:1px solid #b9d6e2;border-radius:14px;background:linear-gradient(115deg,#f0f8fb,#fff);padding:20px;margin:12px 0 24px}
+.pscc-portal .pscc-tracking-kicker{font-weight:800;letter-spacing:.09em;font-size:11px;color:var(--pscc-blue);margin:0 0 8px}
+.pscc-portal .pscc-tracking-address-label{font-size:12px;color:var(--pscc-muted);font-weight:700}
+.pscc-portal .pscc-tracking-address{display:block;max-width:100%;overflow-wrap:anywhere;word-break:break-word;font-size:13px;font-weight:600;line-height:1.6;color:var(--pscc-blue);text-decoration:underline;text-underline-offset:3px}
+.pscc-portal .pscc-tracking-action{margin-top:16px}
+.pscc-portal .pscc-tracking-link{min-height:32px;display:inline-flex;align-items:center;text-underline-offset:3px}
+.pscc-portal .pscc-field-help{font-size:13px;color:var(--pscc-muted);margin:2px 0 8px;line-height:1.5}
+.pscc-portal .pscc-form{gap:8px;width:100%;max-width:800px}
+.pscc-portal .pscc-form input[type=text],.pscc-portal .pscc-form textarea{border:1.5px solid #859cad;border-radius:9px;min-height:44px;line-height:1.45}
+.pscc-portal .pscc-form textarea{min-height:120px;resize:vertical}
+.pscc-portal .pscc-product{min-height:52px}
+.pscc-portal .pscc-btn{min-height:44px;padding:11px 18px;border-radius:9px;transition:background-color .16s,border-color .16s;line-height:1.35}
+.pscc-portal .pscc-pill{border-radius:999px;border:1px solid #bedce9}
+.pscc-portal .pscc-alert{border:1px solid currentColor}
+.pscc-portal :is(a,button,input,textarea,select):focus-visible{outline:3px solid #d07b16;outline-offset:3px;box-shadow:0 0 0 5px #fff}
+.pscc-portal :is(input,textarea):focus{border-color:#0e597c}
+.pscc-portal :is(h2,h3){scroll-margin-top:25px}
+.pscc-portal .pscc-empty{background:#f7fafc;border:1px dashed var(--pscc-line);border-radius:10px;padding:20px}
+.pscc-portal .pscc-message{max-width:100%;border-radius:12px}
+.pscc-portal .pscc-message-head{flex-wrap:wrap}
+@media(max-width:900px){.pscc-portal .pscc-order-row{flex-wrap:wrap}.pscc-portal .pscc-order-main{flex:1 1 45%}.pscc-portal .pscc-track{flex:1 1 45%}.pscc-portal .pscc-order-row>.pscc-btn{flex:1 1 100%}}
+@media(max-width:640px){.pscc-portal .pscc-hero{border-radius:14px}.pscc-portal .pscc-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.pscc-portal .pscc-panel{padding:18px}.pscc-portal .pscc-order-row{padding:16px 0}.pscc-portal .pscc-order-main,.pscc-portal .pscc-track,.pscc-portal .pscc-order-row>.pscc-btn{flex:1 1 100%}.pscc-portal .pscc-hero .pscc-btn{width:100%}.pscc-portal .pscc-quicknav a{flex:1;justify-content:center}.pscc-portal .pscc-tracking-card{padding:16px}}
+@media(prefers-reduced-motion:reduce){.pscc-portal .pscc-btn{transition:none}.pscc-portal *{scroll-behavior:auto!important}}
