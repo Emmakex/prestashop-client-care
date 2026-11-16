@@ -19,6 +19,8 @@ jobs:
           find psclientcare -type f -name '*.php' -print0 | xargs -0 -n1 php -l
       - name: Back Office CSRF regression
         run: php tests/admin-csrf.php
+      - name: Keep configurable incident recipient using PrestaShop email
+        run: php tests/recipient-configuration.php
       - name: Tracking URL and upgrade regression
         run: |
           php tests/tracking-url-test.php
