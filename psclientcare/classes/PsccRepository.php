@@ -88,6 +88,38 @@ class PsccRepository
             WHERE tp.id_pscc_ticket = ' . (int) $ticketId) ?: array();
     }
 
+    /** The oldest active thread is canonical for each order; historic duplicates stay untouched. */
+    public static function getActiveTicketForOrder($orderId, $customerId, $shopId)
+    {
+        return Db::getInstance()->getRow('SELECT t.id_pscc_ticket, t.status FROM `' . _DB_PREFIX_ . 'pscc_ticket` t
+            WHERE t.id_order = ' . (int) $orderId . ' AND t.id_customer = ' . (int) $customerId . '
+              AND t.id_shop = ' . (int) $shopId . " AND t.status IN ('open', 'in_progress')"
+            . ' ORDER BY t.id_pscc_ticket ASC LIMIT 1', false);
+    }
+
+    /** Read-only consolidated timeline; preserves original ticket IDs, authors and timestamps. */
+    public static function getOrderHistory($orderId, $customerId, $shopId)
+    {
+        return Db::getInstance()->executeS('SELECT m.id_pscc_message, m.sender, m.message, m.date_add,
+                    t.id_pscc_ticket, t.subject, t.status
+            FROM `' . _DB_PREFIX_ . 'pscc_message` m
+            INNER JOIN `' . _DB_PREFIX_ . 'pscc_ticket` t ON t.id_pscc_ticket = m.id_pscc_ticket
+            INNER JOIN `' . _DB_PREFIX_ . 'orders` o ON o.id_order = t.id_order
+            WHERE t.id_order = ' . (int) $orderId . ' AND t.id_customer = ' . (int) $customerId . '
+              AND t.id_shop = ' . (int) $shopId . '
+              AND o.id_customer = t.id_customer AND o.id_shop = t.id_shop
+            ORDER BY m.date_add ASC, m.id_pscc_message ASC LIMIT 500') ?: array();
+    }
+
+    public static function archiveCustomerTicket($ticketId, $customerId, $shopId)
+    {
+        // A customer may close only their own active ticket; the record remains read-only history.
+        return Db::getInstance()->update('pscc_ticket', array(
+            'status' => 'archived', 'date_upd' => date('Y-m-d H:i:s'),
+        ), 'id_pscc_ticket = ' . (int) $ticketId . ' AND id_customer = ' . (int) $customerId
+            . ' AND id_shop = ' . (int) $shopId . " AND status IN ('open', 'in_progress')");
+    }
+
     public static function getAdminTickets($shopId)
     {
         return Db::getInstance()->executeS('SELECT t.*, o.reference, c.email, c.firstname, c.lastname,
@@ -96,7 +128,7 @@ class PsccRepository
             INNER JOIN `' . _DB_PREFIX_ . 'orders` o ON o.id_order = t.id_order
             INNER JOIN `' . _DB_PREFIX_ . 'customer` c ON c.id_customer = t.id_customer
             WHERE t.id_shop = ' . (int) $shopId . ' AND o.id_shop = t.id_shop AND o.id_customer = t.id_customer
-            ORDER BY (t.status = \'resolved\') ASC, t.date_upd DESC LIMIT 150') ?: array();
+            ORDER BY (t.status IN (\'resolved\', \'archived\')) ASC, t.id_order DESC, t.date_upd DESC LIMIT 150') ?: array();
     }
 
     public static function getAdminOrders($shopId)
@@ -120,7 +152,7 @@ class PsccRepository
               AND m.date_add >= DATE_SUB(NOW(), INTERVAL ' . (int) $minutes . ' MINUTE)');
     }
 
-    /** Creates exactly one ticket for a given request key, including concurrent retries. */
+    /** Serialized by the order row lock: at most one new active ticket per order. */
     public static function createTicket($orderId, $customerId, $shopId, $subject, $message, $productIds, $requestKey)
     {
         $db = Db::getInstance();
@@ -128,38 +160,70 @@ class PsccRepository
             return false;
         }
         try {
+            // Lock the owned order across concurrent requests (InnoDB).
+            $locked = $db->getRow('SELECT o.id_order FROM `' . _DB_PREFIX_ . 'orders` o
+                WHERE o.id_order = ' . (int) $orderId . ' AND o.id_customer = ' . (int) $customerId . '
+                    AND o.id_shop = ' . (int) $shopId . ' FOR UPDATE', false);
+            if (!$locked) {
+                throw new Exception('Order not owned by customer');
+            }
             if (!PsccSubmission::claim($db, $requestKey, $shopId, $customerId, 'create', $orderId)) {
                 throw new Exception('Duplicate or invalid request key');
             }
+            $active = self::getActiveTicketForOrder($orderId, $customerId, $shopId);
             $now = date('Y-m-d H:i:s');
-            if (!$db->insert('pscc_ticket', array(
-                'id_shop' => (int) $shopId,
-                'id_order' => (int) $orderId,
-                'id_customer' => (int) $customerId,
-                'subject' => pSQL($subject),
-                'status' => 'open',
-                'date_add' => $now,
-                'date_upd' => $now,
-            ))) {
-                throw new Exception('Ticket insert failed');
-            }
-            $ticketId = (int) $db->Insert_ID();
-            foreach ($productIds as $productId) {
-                if (!$db->insert('pscc_ticket_product', array(
-                    'id_pscc_ticket' => $ticketId,
-                    'id_order_detail' => (int) $productId,
+            if ($active) {
+                $ticketId = (int) $active['id_pscc_ticket'];
+                $append = 'Asunto adicional: ' . $subject . "\n" . $message;
+                $messageId = self::addMessage($ticketId, 'customer', $append, false);
+                if (!$messageId) {
+                    throw new Exception('Append to active ticket failed');
+                }
+                foreach ($productIds as $productId) {
+                    $productId = (int) $productId;
+                    if (!$db->execute('INSERT IGNORE INTO `' . _DB_PREFIX_ . 'pscc_ticket_product` (`id_pscc_ticket`, `id_order_detail`)
+                        VALUES (' . $ticketId . ', ' . $productId . ')')) {
+                        throw new Exception('Append selected product failed');
+                    }
+                }
+                if (!$db->update('pscc_ticket', array('date_upd' => $now),
+                    'id_pscc_ticket = ' . $ticketId . ' AND id_customer = ' . (int) $customerId . ' AND id_shop = ' . (int) $shopId)) {
+                    throw new Exception('Ticket date update failed');
+                }
+            } else {
+                if (!$db->insert('pscc_ticket', array(
+                    'id_shop' => (int) $shopId,
+                    'id_order' => (int) $orderId,
+                    'id_customer' => (int) $customerId,
+                    'subject' => pSQL($subject),
+                    'status' => 'open',
+                    'date_add' => $now,
+                    'date_upd' => $now,
                 ))) {
-                    throw new Exception('Product insert failed');
+                    throw new Exception('Ticket insert failed');
+                }
+                $ticketId = (int) $db->Insert_ID();
+                foreach ($productIds as $productId) {
+                    if (!$db->insert('pscc_ticket_product', array(
+                        'id_pscc_ticket' => $ticketId,
+                        'id_order_detail' => (int) $productId,
+                    ))) {
+                        throw new Exception('Product insert failed');
+                    }
+                }
+                $messageId = self::addMessage($ticketId, 'customer', $message, false);
+                if (!$messageId) {
+                    throw new Exception('Message insert failed');
                 }
             }
-            $messageId = self::addMessage($ticketId, 'customer', $message, false);
-            if (!$messageId || !PsccSubmission::finalize($db, $requestKey, $ticketId)) {
-                throw new Exception('Initial message or submission finalization failed');
+            if (!PsccSubmission::finalize($db, $requestKey, $ticketId)) {
+                throw new Exception('Submission finalization failed');
             }
             if (!$db->execute('COMMIT')) {
                 throw new Exception('Commit failed');
             }
-            return array('ticket_id' => $ticketId, 'message_id' => $messageId, 'reused' => false);
+            return array('ticket_id' => $ticketId, 'message_id' => $messageId,
+                'reused' => false, 'appended' => (bool) $active);
         } catch (\Throwable $e) {
             $db->execute('ROLLBACK');
             $existingId = PsccSubmission::find($requestKey, $shopId, $customerId, 'create', $orderId);
@@ -178,13 +242,16 @@ class PsccRepository
             if (!PsccSubmission::claim($db, $requestKey, $shopId, $customerId, 'reply', $ticketId)) {
                 throw new Exception('Duplicate or invalid request key');
             }
+            $current = $db->getRow('SELECT status FROM `' . _DB_PREFIX_ . 'pscc_ticket`
+                WHERE id_pscc_ticket = ' . (int) $ticketId . ' AND id_customer = ' . (int) $customerId
+                . ' AND id_shop = ' . (int) $shopId . ' FOR UPDATE', false);
+            if (!$current || !in_array($current['status'], array('open', 'in_progress'), true)) {
+                throw new Exception('Cannot reply to a closed case');
+            }
+            $status = $current['status'];
             $messageId = self::addMessage($ticketId, 'customer', $message, false);
             if (!$messageId) {
                 throw new Exception('Reply insert failed');
-            }
-            $status = $currentStatus === 'resolved' ? 'open' : $currentStatus;
-            if (!in_array($status, array('open', 'in_progress', 'resolved'), true)) {
-                throw new Exception('Unexpected ticket status');
             }
             if (!$db->update('pscc_ticket', array('status' => pSQL($status), 'date_upd' => date('Y-m-d H:i:s')),
                 'id_pscc_ticket = ' . (int) $ticketId . ' AND id_customer = ' . (int) $customerId . ' AND id_shop = ' . (int) $shopId)
@@ -231,7 +298,7 @@ class PsccRepository
 
     public static function setTicketStatus($ticketId, $status)
     {
-        if (!in_array($status, array('open', 'in_progress', 'resolved'), true)) {
+        if (!in_array($status, array('open', 'in_progress', 'resolved', 'archived'), true)) {
             return false;
         }
         return Db::getInstance()->update('pscc_ticket', array(
