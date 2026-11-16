@@ -120,11 +120,17 @@ class PsccRepository
               AND m.date_add >= DATE_SUB(NOW(), INTERVAL ' . (int) $minutes . ' MINUTE)');
     }
 
-    public static function createTicket($orderId, $customerId, $shopId, $subject, $message, $productIds)
+    /** Creates exactly one ticket for a given request key, including concurrent retries. */
+    public static function createTicket($orderId, $customerId, $shopId, $subject, $message, $productIds, $requestKey)
     {
         $db = Db::getInstance();
-        $db->execute('START TRANSACTION');
+        if (!$db->execute('START TRANSACTION')) {
+            return false;
+        }
         try {
+            if (!PsccSubmission::claim($db, $requestKey, $shopId, $customerId, 'create', $orderId)) {
+                throw new Exception('Duplicate or invalid request key');
+            }
             $now = date('Y-m-d H:i:s');
             if (!$db->insert('pscc_ticket', array(
                 'id_shop' => (int) $shopId,
@@ -147,14 +153,52 @@ class PsccRepository
                 }
             }
             $messageId = self::addMessage($ticketId, 'customer', $message, false);
-            if (!$messageId) {
-                throw new Exception('Message insert failed');
+            if (!$messageId || !PsccSubmission::finalize($db, $requestKey, $ticketId)) {
+                throw new Exception('Initial message or submission finalization failed');
             }
-            $db->execute('COMMIT');
-            return array('ticket_id' => $ticketId, 'message_id' => $messageId);
-        } catch (Exception $e) {
+            if (!$db->execute('COMMIT')) {
+                throw new Exception('Commit failed');
+            }
+            return array('ticket_id' => $ticketId, 'message_id' => $messageId, 'reused' => false);
+        } catch (\Throwable $e) {
             $db->execute('ROLLBACK');
+            $existingId = PsccSubmission::find($requestKey, $shopId, $customerId, 'create', $orderId);
+            return $existingId > 0 ? array('ticket_id' => $existingId, 'message_id' => 0, 'reused' => true) : false;
+        }
+    }
+
+    /** Customer reply, atomic with its submission key and ticket status update. */
+    public static function createReply($ticketId, $customerId, $shopId, $message, $requestKey, $currentStatus)
+    {
+        $db = Db::getInstance();
+        if (!$db->execute('START TRANSACTION')) {
             return false;
+        }
+        try {
+            if (!PsccSubmission::claim($db, $requestKey, $shopId, $customerId, 'reply', $ticketId)) {
+                throw new Exception('Duplicate or invalid request key');
+            }
+            $messageId = self::addMessage($ticketId, 'customer', $message, false);
+            if (!$messageId) {
+                throw new Exception('Reply insert failed');
+            }
+            $status = $currentStatus === 'resolved' ? 'open' : $currentStatus;
+            if (!in_array($status, array('open', 'in_progress', 'resolved'), true)) {
+                throw new Exception('Unexpected ticket status');
+            }
+            if (!$db->update('pscc_ticket', array('status' => pSQL($status), 'date_upd' => date('Y-m-d H:i:s')),
+                'id_pscc_ticket = ' . (int) $ticketId . ' AND id_customer = ' . (int) $customerId . ' AND id_shop = ' . (int) $shopId)
+                || !PsccSubmission::finalize($db, $requestKey, $messageId)) {
+                throw new Exception('Reply finalization failed');
+            }
+            if (!$db->execute('COMMIT')) {
+                throw new Exception('Commit failed');
+            }
+            return array('message_id' => $messageId, 'reused' => false);
+        } catch (\Throwable $e) {
+            $db->execute('ROLLBACK');
+            $existingId = PsccSubmission::find($requestKey, $shopId, $customerId, 'reply', $ticketId);
+            return $existingId > 0 ? array('message_id' => $existingId, 'reused' => true) : false;
         }
     }
 
