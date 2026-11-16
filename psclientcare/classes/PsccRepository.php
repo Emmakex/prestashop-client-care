@@ -202,7 +202,7 @@ class PsccRepository
         if ($url === '') {
             return true;
         }
-        if (strlen($url) > 2048 || preg_match('/[\\x00-\\x20\\x7F]/', $url) || !filter_var($url, FILTER_VALIDATE_URL)) {
+        if (strlen($url) > 2048 || preg_match('/[\x00-\x20\x7F]/', $url) || !filter_var($url, FILTER_VALIDATE_URL)) {
             return false;
         }
         $parts = parse_url($url);
