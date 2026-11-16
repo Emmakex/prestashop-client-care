@@ -1,0 +1,6 @@
+Nova resposta à sua ocorrência #{ticket_id}
+Encomenda: {order_ref}
+
+{message_text}
+
+Ver ocorrência: {ticket_url}

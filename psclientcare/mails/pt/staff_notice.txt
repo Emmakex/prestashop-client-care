@@ -1,0 +1,11 @@
+Nova ocorrência de cliente #{ticket_id}
+Encomenda: {order_ref}
+Cliente: {customer}
+Email: {email}
+Assunto: {subject}
+
+Produtos da encomenda:
+{items_text}
+
+Mensagem:
+{message_text}

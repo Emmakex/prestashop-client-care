@@ -1,0 +1,6 @@
+Nueva respuesta a tu incidencia #{ticket_id}
+Pedido: {order_ref}
+
+{message_text}
+
+Ver incidencia: {ticket_url}
