@@ -110,25 +110,26 @@ class PsccAdmin
             }
         }
 
-        $out = '<style>.pscc-bo{max-width:1160px}.pscc-bo h3{margin-top:22px}.pscc-bo .panel{padding:20px;background:#fff;border:1px solid #dae2e8;border-radius:8px;margin-bottom:15px}.pscc-bo table{width:100%;border-collapse:collapse}.pscc-bo td,.pscc-bo th{padding:9px;border-bottom:1px solid #e5e9ed;text-align:left}.pscc-bo input[type=text],.pscc-bo input[type=email],.pscc-bo input[type=number],.pscc-bo input[type=url],.pscc-bo select,.pscc-bo textarea{width:100%;max-width:550px;padding:8px;border:1px solid #9daebc;border-radius:4px}.pscc-bo label{display:block;margin:9px 0 4px}.pscc-bo button{margin-top:12px;padding:8px 16px;border:0;border-radius:4px;background:#2074a0;color:white}.pscc-bo .muted{color:#596979}.pscc-bo .msg{border-left:4px solid #23855a;background:#e9f7f0;padding:12px}.pscc-bo .err{border-left:4px solid #aa3f3f;background:#fff1f1;padding:12px}.pscc-bo .bubble{padding:10px 12px;background:#f4f7f9;border-radius:7px;margin:8px 0;white-space:pre-wrap}</style>';
+        $out = '<style>.pscc-bo{max-width:1160px}.pscc-bo h3{margin-top:22px}.pscc-bo .panel{padding:20px;background:#fff;border:1px solid #dae2e8;border-radius:8px;margin-bottom:15px}.pscc-bo table{width:100%;border-collapse:collapse}.pscc-bo td,.pscc-bo th{padding:9px;border-bottom:1px solid #e5e9ed;text-align:left}.pscc-bo input[type=text],.pscc-bo input[type=email],.pscc-bo input[type=number],.pscc-bo input[type=url],.pscc-bo select,.pscc-bo textarea{width:100%;max-width:550px;padding:8px;border:1px solid #9daebc;border-radius:4px}.pscc-bo label{display:block;margin:9px 0 4px}.pscc-bo button{margin-top:12px;padding:8px 16px;border:0;border-radius:4px;background:#2074a0;color:white}.pscc-bo .muted{color:#596979}.pscc-bo .msg{border-left:4px solid #23855a;background:#e9f7f0;padding:12px}.pscc-bo .err{border-left:4px solid #aa3f3f;background:#fff1f1;padding:12px}.pscc-bo .bubble{padding:10px 12px;background:#f4f7f9;border-radius:7px;margin:8px 0;white-space:pre-wrap} .pscc-bo .panel{border-radius:14px;box-shadow:0 5px 24px rgba(18,46,70,.055)}.pscc-bo h2{font-weight:750;color:#163248}.pscc-bo h3{font-size:19px;color:#184766}.pscc-bo input[type=text],.pscc-bo input[type=email],.pscc-bo input[type=number],.pscc-bo input[type=url],.pscc-bo select,.pscc-bo textarea{min-height:43px;border-radius:8px}.pscc-bo button{min-height:44px;border-radius:8px;background:#145979;font-weight:700}.pscc-bo button:hover{background:#0d4260}.pscc-bo :is(a,button,input,select,textarea):focus-visible{outline:3px solid #bd6913;outline-offset:2px}.pscc-bo table th{background:#f2f7fa;color:#294758}.pscc-bo .pscc-credit{margin:22px 0;color:#4d6373}.pscc-bo a{color:#125779;text-decoration:underline;overflow-wrap:anywhere}@media(max-width:700px){.pscc-bo .panel{padding:16px}.pscc-bo button{width:100%}} </style>';
         $out .= '<div class="pscc-bo"><h2>Seguimiento de Pedido</h2>';
         $out .= '<p class="muted">Primera fase: seguimiento manual. Las incidencias se guardan antes de intentar enviar los correos.</p>';
         if ($notice) {
-            $out .= '<p class="msg">' . $notice . '</p>';
+            $out .= '<p class="msg" role="status">' . $notice . '</p>';
         }
         if ($error) {
-            $out .= '<p class="err">' . self::e($error) . '</p>';
+            $out .= '<p class="err" role="alert">' . self::e($error) . '</p>';
         }
         $out .= '<section class="panel"><h3>Correo de recepción de incidencias</h3><form method="post" action="' . self::e($baseUrl) . '">';
         $out .= self::hidden($csrf, 'config');
-        $out .= '<label for="pscc_recipient">Dirección de atención al cliente</label><input id="pscc_recipient" type="email" name="pscc_recipient" required value="' . self::e($module->getRecipient()) . '">';
+        $out .= '<label for="pscc_recipient">Dirección de atención al cliente</label><input id="pscc_recipient" type="email" name="pscc_recipient" aria-describedby="pscc-mail-help" required value="' . self::e($module->getRecipient()) . '">';
+        $out .= '<p class="muted" id="pscc-mail-help">Dirección de destino de las incidencias. Se conserva para futuras automatizaciones. Los correos se envían mediante la configuración de correo nativa de PrestaShop; no se configura SMTP aquí.</p>';
         $out .= '<div><button type="submit">Guardar correo</button></div></form></section>';
 
         $out .= '<section class="panel"><h3>Seguimiento de Pedido</h3><form method="post" action="' . self::e($baseUrl) . '">';
         $out .= self::hidden($csrf, 'tracking');
         $out .= '<label for="pscc_order_id">ID interno de pedido (consulta la tabla de abajo)</label><input id="pscc_order_id" type="number" min="1" name="pscc_order_id" required>'; 
         $out .= '<label for="pscc_tracking_code">Código de seguimiento (manual)</label><input id="pscc_tracking_code" type="text" maxlength="160" name="pscc_tracking_code" required>';
-        $out .= '<label for="pscc_tracking_url">URL de seguimiento del transportista (opcional)</label><input id="pscc_tracking_url" type="url" maxlength="2048" name="pscc_tracking_url" placeholder="https://transportista.example/seguimiento/..."><p class="muted">El cliente podrá abrir este enlace desde Seguimiento de Pedido. Utiliza una URL completa con https:// (o http://).</p>';
+        $out .= '<label for="pscc_tracking_url">URL de seguimiento del transportista (opcional)</label><input id="pscc_tracking_url" type="url" maxlength="2048" name="pscc_tracking_url" aria-describedby="pscc-url-help" placeholder="https://transportista.example/seguimiento/..."><p class="muted" id="pscc-url-help">El cliente podrá ver la URL completa y abrir el enlace desde Seguimiento de Pedido. Utiliza una URL completa con https:// (o http://).</p>';
         $out .= '<div><button type="submit">Guardar seguimiento</button></div></form>';
         $out .= '<h4>Últimos 30 pedidos</h4><div style="overflow-x:auto"><table><thead><tr><th>ID</th><th>N.º pedido</th><th>Cliente</th><th>Seguimiento manual</th><th>Enlace</th><th>Fecha</th></tr></thead><tbody>';
         foreach (PsccRepository::getAdminOrders($shopId) as $o) {
@@ -182,7 +183,7 @@ class PsccAdmin
             $out .= '</select><label for="pscc_reply">Respuesta al cliente (opcional para cambiar solo el estado)</label><textarea id="pscc_reply" name="pscc_reply" rows="5" maxlength="4000"></textarea>';
             $out .= '<div><button type="submit">Guardar y enviar respuesta</button></div></form></section>';
         }
-        return $out . '</div>';
+        return $out . '<p class="pscc-credit">Módulo desarrollado por <a href="https://www.eduardoyauriluna.com" rel="noopener noreferrer">Eduardo Yauri</a> · v' . self::e($module->version) . '</p></div>';
     }
 
     private static function hidden($csrf, $action)
