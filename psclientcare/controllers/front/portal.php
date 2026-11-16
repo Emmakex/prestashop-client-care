@@ -34,6 +34,24 @@ class PsclientcarePortalModuleFrontController extends ModuleFrontController
             return;
         }
         $action = (string) Tools::getValue('pscc_action');
+        if ($action === 'archive') {
+            $ticketId = (int) Tools::getValue('ticket_id');
+            $ticket = PsccRepository::getTicket($ticketId, (int) $this->context->shop->id,
+                (int) $this->context->customer->id);
+            if (!$ticket) {
+                $this->psccErrors[] = 'Incidencia no encontrada en tu cuenta.';
+                return;
+            }
+            if (in_array($ticket['status'], array('archived', 'resolved'), true)) {
+                $this->redirectTicket($ticketId, 'archived');
+            }
+            if (!PsccRepository::archiveCustomerTicket($ticketId, (int) $this->context->customer->id,
+                (int) $this->context->shop->id)) {
+                $this->psccErrors[] = 'No se ha podido archivar la incidencia.';
+                return;
+            }
+            $this->redirectTicket($ticketId, 'archived');
+        }
         $key = (string) Tools::getValue('pscc_request_key', '');
         if (!in_array($action, array('create', 'reply'), true) || !PsccSubmission::validKey($key)) {
             $this->psccErrors[] = 'El formulario ha caducado. Vuelve a abrirlo para enviar el mensaje.';
@@ -164,7 +182,7 @@ class PsclientcarePortalModuleFrontController extends ModuleFrontController
             } catch (\Throwable $ignored) {
             }
         }
-        $this->redirectTicket($result['ticket_id'], $sent ? 'created' : 'saved_no_mail');
+        $this->redirectTicket($result['ticket_id'], $sent ? (!empty($result['appended']) ? 'appended' : 'created') : 'saved_no_mail');
     }
 
     private function replyTicket($requestKey)
@@ -173,6 +191,10 @@ class PsclientcarePortalModuleFrontController extends ModuleFrontController
         $ticket = PsccRepository::getTicket($ticketId, (int) $this->context->shop->id, (int) $this->context->customer->id);
         if (!$ticket) {
             $this->psccErrors[] = 'Incidencia no encontrada en tu cuenta.';
+            return;
+        }
+        if (!in_array($ticket['status'], array('open', 'in_progress'), true)) {
+            $this->psccErrors[] = 'Esta incidencia está cerrada y archivada; no admite respuestas.';
             return;
         }
         $message = $this->normalizedMessage();
@@ -212,13 +234,15 @@ class PsclientcarePortalModuleFrontController extends ModuleFrontController
         $selectedTicket = false;
         $thread = array();
         $selectedProducts = array();
+        $orderGroups = array();
+        $activeForOrder = false;
         $ticketId = (int) Tools::getValue('ticket_id');
         if ($ticketId > 0) {
             $selectedTicket = PsccRepository::getTicket($ticketId, $shopId, $customerId);
             if (!$selectedTicket) {
                 $this->psccErrors[] = 'La incidencia solicitada no existe en tu cuenta.';
             } else {
-                $thread = PsccRepository::getTicketMessages($ticketId);
+                $thread = PsccRepository::getOrderHistory((int) $selectedTicket['id_order'], $customerId, $shopId);
                 $selectedProducts = PsccRepository::getSelectedProducts($ticketId);
             }
         }
@@ -229,6 +253,11 @@ class PsclientcarePortalModuleFrontController extends ModuleFrontController
                 $this->psccErrors[] = 'El pedido solicitado no pertenece a tu cuenta.';
             } else {
                 $items = PsccRepository::getOrderItems($orderId);
+                $activeForOrder = PsccRepository::getActiveTicketForOrder($orderId, $customerId, $shopId);
+                if ($activeForOrder) {
+                    $activeForOrder['portal_url'] = $this->context->link->getModuleLink($this->module->name,
+                        'portal', array('ticket_id' => (int) $activeForOrder['id_pscc_ticket']), true);
+                }
             }
         }
         $orders = PsccRepository::getCustomerOrders($customerId, $shopId);
@@ -247,6 +276,22 @@ class PsclientcarePortalModuleFrontController extends ModuleFrontController
             $ticket['portal_url'] = $this->context->link->getModuleLink($this->module->name, 'portal', array('ticket_id' => (int) $ticket['id_pscc_ticket']), true);
         }
         unset($ticket);
+        foreach ($tickets as $ticket) {
+            $groupKey = (int) $ticket['id_order'];
+            if (!isset($orderGroups[$groupKey])) {
+                $orderGroups[$groupKey] = array(
+                    'reference' => $ticket['reference'], 'id_order' => $groupKey,
+                    'active' => array(), 'archive' => array(), 'total' => 0,
+                );
+            }
+            $orderGroups[$groupKey]['total']++;
+            if (in_array($ticket['status'], array('open', 'in_progress'), true)) {
+                $orderGroups[$groupKey]['active'][] = $ticket;
+            } else {
+                $orderGroups[$groupKey]['archive'][] = $ticket;
+            }
+        }
+        $orderGroups = array_values($orderGroups);
         $this->context->smarty->assign(array(
             'pscc_home' => $this->context->link->getModuleLink($this->module->name, 'portal', array(), true),
             'pscc_order_form_url' => $selectedOrder ? $this->context->link->getModuleLink($this->module->name, 'portal', array('id_order' => $orderId), true) : '',
@@ -256,6 +301,8 @@ class PsclientcarePortalModuleFrontController extends ModuleFrontController
             'pscc_request_reply' => PsccSubmission::newKey(),
             'pscc_orders' => $orders,
             'pscc_tickets' => $tickets,
+            'pscc_order_groups' => $orderGroups,
+            'pscc_order_active' => $activeForOrder,
             'pscc_order' => $selectedOrder,
             'pscc_items' => $items,
             'pscc_ticket' => $selectedTicket,
