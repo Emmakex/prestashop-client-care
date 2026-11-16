@@ -15,6 +15,8 @@
     <div class="pscc-alert pscc-alert-success" role="status">Incidencia registrada. La notificación por correo ha sido aceptada por PrestaShop.</div>
   {elseif $pscc_notice == 'reply'}
     <div class="pscc-alert pscc-alert-success" role="status">Mensaje guardado. La notificación por correo ha sido aceptada por PrestaShop.</div>
+  {elseif $pscc_notice == 'already_saved'}
+    <div class="pscc-alert pscc-alert-success" role="status">Este envío ya estaba registrado. No se ha creado ninguna incidencia ni mensaje duplicado.</div>
   {elseif $pscc_notice == 'saved_no_mail'}
     <div class="pscc-alert pscc-alert-warning" role="alert">Tu mensaje está guardado, pero no se pudo enviar la notificación por correo. La tienda puede consultarlo en administración.</div>
   {/if}
@@ -47,6 +49,7 @@
       </div>
       <form method="post" action="{$pscc_ticket_form_url|escape:'htmlall':'UTF-8'}" class="pscc-form">
         <input type="hidden" name="pscc_action" value="reply">
+        <input type="hidden" name="pscc_request_key" value="{$pscc_request_reply|escape:'htmlall':'UTF-8'}">
         <input type="hidden" name="ticket_id" value="{$pscc_ticket.id_pscc_ticket|intval}">
         <input type="hidden" name="pscc_token" value="{$pscc_token|escape:'htmlall':'UTF-8'}">
         <label for="pscc_message_reply">Añadir un mensaje</label>
@@ -73,6 +76,7 @@
       <h3>Productos comprados</h3>
       <form method="post" action="{$pscc_order_form_url|escape:'htmlall':'UTF-8'}" class="pscc-form">
         <input type="hidden" name="pscc_action" value="create">
+        <input type="hidden" name="pscc_request_key" value="{$pscc_request_create|escape:'htmlall':'UTF-8'}">
         <input type="hidden" name="id_order" value="{$pscc_order.id_order|intval}">
         <input type="hidden" name="pscc_token" value="{$pscc_token|escape:'htmlall':'UTF-8'}">
         <div class="pscc-products">

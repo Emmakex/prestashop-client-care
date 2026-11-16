@@ -7,6 +7,7 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
+require_once __DIR__ . '/classes/PsccSubmission.php';
 require_once __DIR__ . '/classes/PsccRepository.php';
 require_once __DIR__ . '/classes/PsccMailer.php';
 require_once __DIR__ . '/classes/PsccAdmin.php';
@@ -19,7 +20,7 @@ class Psclientcare extends Module
     {
         $this->name = 'psclientcare';
         $this->tab = 'front_office_features';
-        $this->version = '0.1.4';
+        $this->version = '0.1.5';
         $this->author = 'Eduardo Yauri';
         $this->author_uri = 'https://www.eduardoyauriluna.com';
         $this->need_instance = 0;
@@ -35,6 +36,7 @@ class Psclientcare extends Module
     {
         return parent::install()
             && $this->installSchema()
+            && PsccSubmission::installSchema()
             && $this->registerHook('displayCustomerAccount')
             && Configuration::updateValue(self::CONFIG_RECIPIENT, Configuration::get('PS_SHOP_EMAIL'));
     }

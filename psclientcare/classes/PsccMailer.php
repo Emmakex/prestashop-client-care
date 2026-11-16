@@ -49,8 +49,12 @@ class PsccMailer
                 null,
                 $this->module->getLocalPath() . 'mails/'
             );
-        } catch (Exception $e) {
-            PrestaShopLogger::addLog('psclientcare: email failed: ' . $template, 2);
+        } catch (\Throwable $e) {
+            try {
+                PrestaShopLogger::addLog('psclientcare: email failed: ' . $template, 2);
+            } catch (\Throwable $logError) {
+                // Never turn a failed email into a failed ticket submission.
+            }
             return false;
         }
     }

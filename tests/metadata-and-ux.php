@@ -7,7 +7,7 @@ $css = file_get_contents($root . '/views/css/portal.css');
 $admin = file_get_contents($root . '/classes/PsccAdmin.php');
 $mail = file_get_contents($root . '/classes/PsccMailer.php');
 $checks = array(
-  'version' => strpos($main, "\$this->version = '0.1.4'") !== false,
+  'version' => strpos($main, "\$this->version = '0.1.5'") !== false,
   'author' => strpos($main, "\$this->author = 'Eduardo Yauri'") !== false && strpos($xml, 'Eduardo Yauri') !== false,
   'author website' => strpos($main, 'https://www.eduardoyauriluna.com') !== false && strpos($admin, 'https://www.eduardoyauriluna.com') !== false,
   'tracking URL visible' => substr_count($tpl, "tracking_url|escape:'htmlall':'UTF-8'") >= 6,
@@ -19,7 +19,7 @@ $checks = array(
   'reduced motion' => strpos($css, 'prefers-reduced-motion') !== false,
   'new tab safety' => strpos($tpl, 'rel="noopener noreferrer"') !== false,
   'responsive' => strpos($css, 'max-width:640px') !== false,
-  'schema upgrade' => file_exists($root . '/upgrade/upgrade-0.1.4.php'),
+  'schema upgrade' => file_exists($root . '/upgrade/upgrade-0.1.4.php') && file_exists($root . '/upgrade/upgrade-0.1.5.php'),
 );
 foreach ($checks as $name => $pass) {
   if (!$pass) {fwrite(STDERR, "FAIL: $name\n"); exit(1);}
