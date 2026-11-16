@@ -16,16 +16,42 @@ class PsccAdmin
         return isset($names[$status]) ? $names[$status] : 'Desconocido';
     }
 
+    /**
+     * Module-scoped CSRF token that does not depend on the legacy AdminModules
+     * token being regenerated identically by Symfony/legacy BO routes.
+     * Tokens are signed with PrestaShop's server-side secret, scoped to the
+     * authenticated employee and shop, and rotate each UTC day.
+     */
+    private static function csrfToken($employeeId, $shopId, $daysAgo = 0)
+    {
+        $day = gmdate('Ymd', time() - (int) $daysAgo * 86400);
+        $payload = 'psclientcare:admin:' . (int) $employeeId . ':' . (int) $shopId . ':' . $day;
+
+        return hash_hmac('sha256', $payload, (string) _COOKIE_KEY_);
+    }
+
+    private static function validCsrf($submitted, $employeeId, $shopId)
+    {
+        if ($employeeId <= 0 || $shopId <= 0 || !is_string($submitted) || strlen($submitted) !== 64) {
+            return false;
+        }
+
+        // Allow a form opened shortly before UTC midnight to be submitted.
+        return hash_equals(self::csrfToken($employeeId, $shopId), $submitted)
+            || hash_equals(self::csrfToken($employeeId, $shopId, 1), $submitted);
+    }
+
     public static function render($module)
     {
         $ctx = Context::getContext();
         $shopId = (int) $ctx->shop->id;
+        $employeeId = (int) $ctx->employee->id;
         $baseUrl = $ctx->link->getAdminLink('AdminModules', true, array(), array('configure' => $module->name));
-        $csrf = Tools::getAdminTokenLite('AdminModules');
+        $csrf = self::csrfToken($employeeId, $shopId);
         $notice = '';
         $error = '';
         $isPosted = Tools::isSubmit('pscc_action');
-        if ($isPosted && !hash_equals((string) $csrf, (string) Tools::getValue('pscc_nonce', ''))) {
+        if ($isPosted && !self::validCsrf((string) Tools::getValue('pscc_nonce', ''), $employeeId, $shopId)) {
             $error = 'Token de seguridad no válido. Recarga la página.';
         } elseif ($isPosted) {
             $action = (string) Tools::getValue('pscc_action');
