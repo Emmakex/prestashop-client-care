@@ -9,7 +9,7 @@ class PsccRepository
     public static function getCustomerOrders($customerId, $shopId, $limit = 80)
     {
         return Db::getInstance()->executeS('SELECT o.id_order, o.reference, o.date_add,
-            osl.name AS state_name, mt.tracking_number AS manual_tracking,
+            osl.name AS state_name, mt.tracking_number AS manual_tracking, mt.tracking_url AS manual_tracking_url,
             (SELECT oc.tracking_number FROM `' . _DB_PREFIX_ . 'order_carrier` oc
                 WHERE oc.id_order = o.id_order AND oc.tracking_number IS NOT NULL AND oc.tracking_number != \'\'
                 ORDER BY oc.id_order_carrier DESC LIMIT 1) AS native_tracking
@@ -24,7 +24,7 @@ class PsccRepository
     public static function getCustomerOrder($orderId, $customerId, $shopId)
     {
         return Db::getInstance()->getRow('SELECT o.id_order, o.id_customer, o.id_shop, o.reference, o.date_add,
-            osl.name AS state_name, mt.tracking_number AS manual_tracking,
+            osl.name AS state_name, mt.tracking_number AS manual_tracking, mt.tracking_url AS manual_tracking_url,
             (SELECT oc.tracking_number FROM `' . _DB_PREFIX_ . 'order_carrier` oc
                 WHERE oc.id_order = o.id_order AND oc.tracking_number IS NOT NULL AND oc.tracking_number != \'\'
                 ORDER BY oc.id_order_carrier DESC LIMIT 1) AS native_tracking
@@ -102,7 +102,7 @@ class PsccRepository
     public static function getAdminOrders($shopId)
     {
         return Db::getInstance()->executeS('SELECT o.id_order, o.reference, o.date_add,
-            c.firstname, c.lastname, mt.tracking_number AS manual_tracking
+            c.firstname, c.lastname, mt.tracking_number AS manual_tracking, mt.tracking_url AS manual_tracking_url
             FROM `' . _DB_PREFIX_ . 'orders` o
             INNER JOIN `' . _DB_PREFIX_ . 'customer` c ON c.id_customer = o.id_customer
             LEFT JOIN `' . _DB_PREFIX_ . 'pscc_tracking` mt ON mt.id_order = o.id_order AND mt.id_shop = o.id_shop
@@ -196,13 +196,29 @@ class PsccRepository
         ), 'id_pscc_ticket = ' . (int) $ticketId);
     }
 
-    public static function setTracking($orderId, $shopId, $code, $employeeId)
+    /** Only safe HTTP(S) links may be exposed to customers. Empty means no link. */
+    public static function isValidTrackingUrl($url)
+    {
+        if ($url === '') {
+            return true;
+        }
+        if (strlen($url) > 2048 || preg_match('/[\\x00-\\x20\\x7F]/', $url) || !filter_var($url, FILTER_VALIDATE_URL)) {
+            return false;
+        }
+        $parts = parse_url($url);
+        return is_array($parts) && !empty($parts['host'])
+            && isset($parts['scheme']) && in_array(strtolower($parts['scheme']), array('http', 'https'), true)
+            && !isset($parts['user']) && !isset($parts['pass']);
+    }
+
+    public static function setTracking($orderId, $shopId, $code, $url, $employeeId)
     {
         // Future carrier synchronization can write the same table with source='automatic'.
         return Db::getInstance()->insert('pscc_tracking', array(
             'id_order' => (int) $orderId,
             'id_shop' => (int) $shopId,
             'tracking_number' => pSQL($code),
+            'tracking_url' => pSQL($url),
             'source' => 'manual',
             'id_employee' => (int) $employeeId,
             'date_upd' => date('Y-m-d H:i:s'),
