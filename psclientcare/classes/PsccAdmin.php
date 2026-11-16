@@ -12,7 +12,7 @@ class PsccAdmin
 
     private static function status($status)
     {
-        $names = array('open' => 'Abierta', 'in_progress' => 'En curso', 'resolved' => 'Resuelta');
+        $names = array('open' => 'Abierta', 'in_progress' => 'En curso', 'resolved' => 'Resuelta / Histórica', 'archived' => 'Cerrada · Archivada');
         return isset($names[$status]) ? $names[$status] : 'Desconocido';
     }
 
@@ -89,7 +89,7 @@ class PsccAdmin
                 $message = trim(strip_tags((string) Tools::getValue('pscc_reply')));
                 if (!$ticket) {
                     $error = 'Incidencia no encontrada.';
-                } elseif (!in_array($status, array('open', 'in_progress', 'resolved'), true)) {
+                } elseif (!in_array($status, array('open', 'in_progress', 'resolved', 'archived'), true)) {
                     $error = 'Estado inválido.';
                 } elseif (Tools::strlen($message) > 4000) {
                     $error = 'La respuesta supera los 4000 caracteres.';
@@ -101,7 +101,11 @@ class PsccAdmin
                         $error = 'Estado guardado, pero no se pudo guardar el mensaje.';
                     } else {
                         $url = $ctx->link->getModuleLink($module->name, 'portal', array('ticket_id' => $ticketId), true);
-                        $sent = $module->getMailer()->notifyCustomer($ticket, $message, $url);
+                        try {
+                            $sent = $module->getMailer()->notifyCustomer($ticket, $message, $url);
+                        } catch (\Throwable $e) {
+                            $sent = false;
+                        }
                         PsccRepository::setMessageEmailStatus($messageId, $sent);
                         $notice = $sent ? 'Respuesta guardada y correo aceptado por PrestaShop.' :
                             'Respuesta guardada, pero NO se pudo enviar el correo. Revísalo en la incidencia.';
@@ -125,7 +129,13 @@ class PsccAdmin
         $out .= self::hidden($csrf, 'config');
         $out .= '<label for="pscc_recipient">Dirección de atención al cliente</label><input id="pscc_recipient" type="email" name="pscc_recipient" aria-describedby="pscc-mail-help" required value="' . self::e($module->getRecipient()) . '">';
         $out .= '<p class="muted" id="pscc-mail-help">Dirección de destino de las incidencias. Se conserva para futuras automatizaciones. Los correos se envían mediante la configuración de correo nativa de PrestaShop; no se configura SMTP aquí.</p>';
-        $out .= '<div><button type="submit">Guardar correo</button></div></form></section>';
+        $out .= '<div><button type="submit">Guardar correo</button></div></form>';
+        $lastMail = (string) Configuration::get('PSCC_LAST_MAIL_DIAGNOSTIC');
+        $mailMethod = (string) Configuration::get('PS_MAIL_METHOD');
+        $out .= '<p class="muted"><strong>Diagnóstico del envío nativo:</strong> ';
+        $out .= $lastMail ? self::e($lastMail) : 'Todavía no hay resultados registrados';
+        $out .= '. Método de correo PrestaShop: ' . self::e($mailMethod === '' ? 'No disponible' : $mailMethod) . '.</p>';
+        $out .= '<p class="muted">Si aparece mail_send_returned_false o exception, utiliza el correo de prueba de Parámetros avanzados → Correo electrónico de PrestaShop y revisa los registros PHP. No hace falta configurar otro SMTP aquí.</p></section>';
 
         $out .= '<section class="panel"><h3>Seguimiento de Pedido</h3><form method="post" action="' . self::e($baseUrl) . '">';
         $out .= self::hidden($csrf, 'tracking');
@@ -141,11 +151,28 @@ class PsccAdmin
         }
         $out .= '</tbody></table></div></section>';
 
-        $out .= '<section class="panel"><h3>Incidencias recibidas</h3><div style="overflow-x:auto"><table><thead><tr><th>#</th><th>Pedido</th><th>Cliente</th><th>Asunto</th><th>Estado</th><th>Fecha</th><th></th></tr></thead><tbody>';
+        $out .= '<section class="panel"><h3>Incidencias agrupadas por pedido</h3>';
+        $out .= '<p class="muted">Todas las incidencias de un pedido se conservan y se muestran juntas. Los casos archivados permanecen en el histórico, sin borrar conversaciones.</p>';
+        $out .= '<div style="overflow-x:auto"><table><thead><tr><th>#</th><th>Pedido</th><th>Cliente</th><th>Asunto</th><th>Estado</th><th>Fecha</th><th></th></tr></thead><tbody>';
         $tickets = PsccRepository::getAdminTickets($shopId);
+        $grouped = array();
         foreach ($tickets as $t) {
-            $url = $baseUrl . '&view_pscc_ticket=' . (int) $t['id_pscc_ticket'];
-            $out .= '<tr><td>' . (int) $t['id_pscc_ticket'] . '</td><td>' . self::e($t['reference']) . '</td><td>' . self::e($t['firstname'] . ' ' . $t['lastname']) . '</td><td>' . self::e($t['subject']) . '</td><td>' . self::e(self::status($t['status'])) . '</td><td>' . self::e($t['date_upd']) . '</td><td><a href="' . self::e($url) . '">Ver / responder</a></td></tr>';
+            $key = (int) $t['id_order'];
+            if (!isset($grouped[$key])) {
+                $grouped[$key] = array('reference' => $t['reference'], 'tickets' => array());
+            }
+            $grouped[$key]['tickets'][] = $t;
+        }
+        foreach ($grouped as $orderGroup) {
+            $out .= '<tr class="pscc-admin-order"><th colspan="7">Pedido ' . self::e($orderGroup['reference'])
+                . ' · ' . count($orderGroup['tickets']) . ' expediente(s)</th></tr>';
+            foreach ($orderGroup['tickets'] as $t) {
+                $url = $baseUrl . '&view_pscc_ticket=' . (int) $t['id_pscc_ticket'];
+                $out .= '<tr><td>' . (int) $t['id_pscc_ticket'] . '</td><td>' . self::e($t['reference'])
+                    . '</td><td>' . self::e($t['firstname'] . ' ' . $t['lastname']) . '</td><td>'
+                    . self::e($t['subject']) . '</td><td>' . self::e(self::status($t['status'])) . '</td><td>'
+                    . self::e($t['date_upd']) . '</td><td><a href="' . self::e($url) . '">Ver / gestionar</a></td></tr>';
+            }
         }
         if (!$tickets) {
             $out .= '<tr><td colspan="7">No hay incidencias.</td></tr>';
@@ -173,14 +200,15 @@ class PsccAdmin
                 }
                 $out .= implode('; ', $names) . '</p>';
             }
-            foreach (PsccRepository::getTicketMessages($ticketId) as $m) {
-                $out .= '<div class="bubble"><strong>' . ($m['sender'] === 'customer' ? 'Cliente' : 'Tienda') . '</strong> · ' . self::e($m['date_add']) . '<br>' . nl2br(self::e($m['message'])) . '<br><small>Correo: ' . self::e($m['email_status']) . '</small></div>';
+            $out .= '<h4>Conversación conjunta del pedido (histórico completo)</h4>';
+            foreach (PsccRepository::getOrderHistory((int) $t['id_order'], (int) $t['id_customer'], $shopId) as $m) {
+                $out .= '<div class="bubble"><strong>' . ($m['sender'] === 'customer' ? 'Cliente' : 'Tienda') . '</strong> · ' . self::e($m['date_add']) . ' · incidencia #' . (int) $m['id_pscc_ticket'] . '<br>' . nl2br(self::e($m['message'])) . '</div>';
             }
             $out .= '<form method="post" action="' . self::e($baseUrl . '&view_pscc_ticket=' . $ticketId) . '">';
             $out .= self::hidden($csrf, 'reply');
             $out .= '<input type="hidden" name="pscc_ticket_id" value="' . $ticketId . '">';
             $out .= '<label for="pscc_status">Estado</label><select id="pscc_status" name="pscc_status">';
-            foreach (array('open', 'in_progress', 'resolved') as $status) {
+            foreach (array('open', 'in_progress', 'resolved', 'archived') as $status) {
                 $out .= '<option value="' . $status . '"' . ($t['status'] === $status ? ' selected' : '') . '>' . self::status($status) . '</option>';
             }
             $out .= '</select><label for="pscc_reply">Respuesta al cliente (opcional para cambiar solo el estado)</label><textarea id="pscc_reply" name="pscc_reply" rows="5" maxlength="4000"></textarea>';
