@@ -67,12 +67,15 @@ class PsccAdmin
             } elseif ($action === 'tracking') {
                 $orderId = (int) Tools::getValue('pscc_order_id');
                 $raw = trim((string) Tools::getValue('pscc_tracking_code'));
+                $trackingUrl = trim((string) Tools::getValue('pscc_tracking_url', ''));
                 $order = PsccRepository::getAdminOrder($orderId, $shopId);
                 if (!$order) {
                     $error = 'Pedido no encontrado en esta tienda.';
                 } elseif (Tools::strlen($raw) < 3 || Tools::strlen($raw) > 160 || preg_match('/[<>\x00-\x1F\x7F]/', $raw)) {
                     $error = 'El seguimiento debe contener entre 3 y 160 caracteres válidos.';
-                } elseif (PsccRepository::setTracking($orderId, $shopId, $raw, (int) $ctx->employee->id)) {
+                } elseif (!PsccRepository::isValidTrackingUrl($trackingUrl)) {
+                    $error = 'La URL de seguimiento debe ser un enlace HTTP o HTTPS válido (máximo 2048 caracteres).';
+                } elseif (PsccRepository::setTracking($orderId, $shopId, $raw, $trackingUrl, (int) $ctx->employee->id)) {
                     $notice = 'Seguimiento actualizado para el pedido ' . self::e($order['reference']) . '.';
                 } else {
                     $error = 'No se pudo guardar el seguimiento.';
@@ -107,8 +110,8 @@ class PsccAdmin
             }
         }
 
-        $out = '<style>.pscc-bo{max-width:1160px}.pscc-bo h3{margin-top:22px}.pscc-bo .panel{padding:20px;background:#fff;border:1px solid #dae2e8;border-radius:8px;margin-bottom:15px}.pscc-bo table{width:100%;border-collapse:collapse}.pscc-bo td,.pscc-bo th{padding:9px;border-bottom:1px solid #e5e9ed;text-align:left}.pscc-bo input[type=text],.pscc-bo input[type=email],.pscc-bo input[type=number],.pscc-bo select,.pscc-bo textarea{width:100%;max-width:550px;padding:8px;border:1px solid #9daebc;border-radius:4px}.pscc-bo label{display:block;margin:9px 0 4px}.pscc-bo button{margin-top:12px;padding:8px 16px;border:0;border-radius:4px;background:#2074a0;color:white}.pscc-bo .muted{color:#596979}.pscc-bo .msg{border-left:4px solid #23855a;background:#e9f7f0;padding:12px}.pscc-bo .err{border-left:4px solid #aa3f3f;background:#fff1f1;padding:12px}.pscc-bo .bubble{padding:10px 12px;background:#f4f7f9;border-radius:7px;margin:8px 0;white-space:pre-wrap}</style>';
-        $out .= '<div class="pscc-bo"><h2>Portal del cliente — incidencias y seguimiento</h2>';
+        $out = '<style>.pscc-bo{max-width:1160px}.pscc-bo h3{margin-top:22px}.pscc-bo .panel{padding:20px;background:#fff;border:1px solid #dae2e8;border-radius:8px;margin-bottom:15px}.pscc-bo table{width:100%;border-collapse:collapse}.pscc-bo td,.pscc-bo th{padding:9px;border-bottom:1px solid #e5e9ed;text-align:left}.pscc-bo input[type=text],.pscc-bo input[type=email],.pscc-bo input[type=number],.pscc-bo input[type=url],.pscc-bo select,.pscc-bo textarea{width:100%;max-width:550px;padding:8px;border:1px solid #9daebc;border-radius:4px}.pscc-bo label{display:block;margin:9px 0 4px}.pscc-bo button{margin-top:12px;padding:8px 16px;border:0;border-radius:4px;background:#2074a0;color:white}.pscc-bo .muted{color:#596979}.pscc-bo .msg{border-left:4px solid #23855a;background:#e9f7f0;padding:12px}.pscc-bo .err{border-left:4px solid #aa3f3f;background:#fff1f1;padding:12px}.pscc-bo .bubble{padding:10px 12px;background:#f4f7f9;border-radius:7px;margin:8px 0;white-space:pre-wrap}</style>';
+        $out .= '<div class="pscc-bo"><h2>Seguimiento de Pedido</h2>';
         $out .= '<p class="muted">Primera fase: seguimiento manual. Las incidencias se guardan antes de intentar enviar los correos.</p>';
         if ($notice) {
             $out .= '<p class="msg">' . $notice . '</p>';
@@ -121,14 +124,16 @@ class PsccAdmin
         $out .= '<label for="pscc_recipient">Dirección de atención al cliente</label><input id="pscc_recipient" type="email" name="pscc_recipient" required value="' . self::e($module->getRecipient()) . '">';
         $out .= '<div><button type="submit">Guardar correo</button></div></form></section>';
 
-        $out .= '<section class="panel"><h3>Introducir número de seguimiento</h3><form method="post" action="' . self::e($baseUrl) . '">';
+        $out .= '<section class="panel"><h3>Seguimiento de Pedido</h3><form method="post" action="' . self::e($baseUrl) . '">';
         $out .= self::hidden($csrf, 'tracking');
         $out .= '<label for="pscc_order_id">ID interno de pedido (consulta la tabla de abajo)</label><input id="pscc_order_id" type="number" min="1" name="pscc_order_id" required>'; 
         $out .= '<label for="pscc_tracking_code">Código de seguimiento (manual)</label><input id="pscc_tracking_code" type="text" maxlength="160" name="pscc_tracking_code" required>';
+        $out .= '<label for="pscc_tracking_url">URL de seguimiento del transportista (opcional)</label><input id="pscc_tracking_url" type="url" maxlength="2048" name="pscc_tracking_url" placeholder="https://transportista.example/seguimiento/..."><p class="muted">El cliente podrá abrir este enlace desde Seguimiento de Pedido. Utiliza una URL completa con https:// (o http://).</p>';
         $out .= '<div><button type="submit">Guardar seguimiento</button></div></form>';
-        $out .= '<h4>Últimos 30 pedidos</h4><div style="overflow-x:auto"><table><thead><tr><th>ID</th><th>N.º pedido</th><th>Cliente</th><th>Seguimiento manual</th><th>Fecha</th></tr></thead><tbody>';
+        $out .= '<h4>Últimos 30 pedidos</h4><div style="overflow-x:auto"><table><thead><tr><th>ID</th><th>N.º pedido</th><th>Cliente</th><th>Seguimiento manual</th><th>Enlace</th><th>Fecha</th></tr></thead><tbody>';
         foreach (PsccRepository::getAdminOrders($shopId) as $o) {
-            $out .= '<tr><td>' . (int) $o['id_order'] . '</td><td>' . self::e($o['reference']) . '</td><td>' . self::e($o['firstname'] . ' ' . $o['lastname']) . '</td><td>' . self::e($o['manual_tracking'] ?: '—') . '</td><td>' . self::e($o['date_add']) . '</td></tr>';
+            $trackingLink = !empty($o['manual_tracking_url']) && PsccRepository::isValidTrackingUrl($o['manual_tracking_url']) ? '<a href="' . self::e($o['manual_tracking_url']) . '" target="_blank" rel="noopener noreferrer">Abrir seguimiento</a>' : '—';
+            $out .= '<tr><td>' . (int) $o['id_order'] . '</td><td>' . self::e($o['reference']) . '</td><td>' . self::e($o['firstname'] . ' ' . $o['lastname']) . '</td><td>' . self::e($o['manual_tracking'] ?: '—') . '</td><td>' . $trackingLink . '</td><td>' . self::e($o['date_add']) . '</td></tr>';
         }
         $out .= '</tbody></table></div></section>';
 
