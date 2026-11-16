@@ -174,11 +174,13 @@ class PsclientcarePortalModuleFrontController extends ModuleFrontController
         $orders = PsccRepository::getCustomerOrders($customerId, $shopId);
         foreach ($orders as &$o) {
             $o['tracking_display'] = trim((string) $o['manual_tracking']) !== '' ? $o['manual_tracking'] : $o['native_tracking'];
+            $o['tracking_url'] = PsccRepository::isValidTrackingUrl((string) $o['manual_tracking_url']) ? $o['manual_tracking_url'] : '';
             $o['portal_url'] = $this->context->link->getModuleLink($this->module->name, 'portal', array('id_order' => (int) $o['id_order']), true);
         }
         unset($o);
         if ($selectedOrder) {
             $selectedOrder['tracking_display'] = trim((string) $selectedOrder['manual_tracking']) !== '' ? $selectedOrder['manual_tracking'] : $selectedOrder['native_tracking'];
+            $selectedOrder['tracking_url'] = PsccRepository::isValidTrackingUrl((string) $selectedOrder['manual_tracking_url']) ? $selectedOrder['manual_tracking_url'] : '';
         }
         $tickets = PsccRepository::getCustomerTickets($customerId, $shopId);
         foreach ($tickets as &$ticket) {
