@@ -19,7 +19,7 @@ class Psclientcare extends Module
     {
         $this->name = 'psclientcare';
         $this->tab = 'front_office_features';
-        $this->version = '0.1.0';
+        $this->version = '0.1.1';
         $this->author = 'Emmakex';
         $this->need_instance = 0;
         $this->bootstrap = true;
