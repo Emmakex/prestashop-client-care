@@ -82,3 +82,23 @@
 .pscc-portal #pscc-orders,.pscc-portal #pscc-tickets{scroll-margin-top:28px}
 @media(max-width:920px){.pscc-portal .pscc-panel-orders .pscc-shipment{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.pscc-portal .pscc-shipment .pscc-order-actions{grid-column:1/-1;flex-direction:row}.pscc-portal .pscc-shipment .pscc-order-actions .pscc-btn{width:auto;flex:1 1 50%}}
 @media(max-width:640px){.pscc-portal .pscc-overview{gap:16px;margin:18px 0 22px}.pscc-portal .pscc-overview .pscc-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.pscc-portal .pscc-overview .pscc-summary-note{grid-column:1/-1}.pscc-portal .pscc-overview .pscc-summary>div{min-height:94px;padding:14px}.pscc-portal .pscc-overview .pscc-quicknav .pscc-quicklink{flex:1 1 100%;width:100%;justify-content:flex-start}.pscc-portal .pscc-panel-orders .pscc-shipment{grid-template-columns:minmax(0,1fr);gap:15px;padding:16px!important}.pscc-portal .pscc-shipment .pscc-order-actions{grid-column:1;flex-direction:column}.pscc-portal .pscc-shipment .pscc-order-actions .pscc-btn{width:100%}}
+
+/* v0.1.6: one active case per order, archive historic cases without deletion */
+.pscc-portal .pscc-ticket-groups{display:grid;gap:16px;margin-top:22px}
+.pscc-portal .pscc-case-group{min-width:0;border:1px solid #cedee8;background:#fbfdff;border-radius:16px;padding:22px}
+.pscc-portal .pscc-case-group-head{display:flex;justify-content:space-between;align-items:center;gap:14px;padding-bottom:15px;border-bottom:1px solid #dce7ef}
+.pscc-portal .pscc-case-group-head h3{font-size:20px;line-height:1.3;margin:4px 0 0;color:#18394d}
+.pscc-portal .pscc-case-count{border-radius:24px;background:#e9f3f8;color:#125779;font-size:13px;font-weight:700;padding:8px 12px}
+.pscc-portal .pscc-case-line{display:flex;align-items:center;justify-content:space-between;gap:16px;min-width:0;padding:16px 0;border-bottom:1px solid #e4ecf2}
+.pscc-portal .pscc-case-line:last-child{border-bottom:0}
+.pscc-portal .pscc-case-line>div{display:grid;gap:5px;min-width:0;overflow-wrap:anywhere}
+.pscc-portal .pscc-case-line small{color:#526b7d}
+.pscc-portal .pscc-case-archive{margin-top:14px;border-top:1px solid #e0e9f0;padding:12px 0 0}
+.pscc-portal .pscc-case-archive summary{cursor:pointer;color:#155f83;font-weight:750;padding:10px 5px;min-height:44px;list-style:revert}
+.pscc-portal .pscc-case-archive summary:focus-visible{outline:3px solid #ad6d16;outline-offset:3px}
+.pscc-portal .pscc-existing-case,.pscc-portal .pscc-archived-note{padding:20px;border:1px solid #c9dee9;border-radius:14px;background:#eef6fa;color:#183b52;margin:18px 0}
+.pscc-portal .pscc-existing-case p{line-height:1.5;margin:10px 0 18px}
+.pscc-portal .pscc-archive-form{display:grid;justify-items:start;gap:6px;margin-top:22px;border-top:1px solid #dfebf1;padding-top:18px}
+.pscc-portal .pscc-archive-form button{border-color:#9a5662;color:#753640}
+.pscc-portal .pscc-archive-form button:hover{background:#fff0f1}
+@media(max-width:640px){.pscc-portal .pscc-case-group{padding:16px}.pscc-portal .pscc-case-group-head{align-items:flex-start;flex-direction:column}.pscc-portal .pscc-case-line{align-items:stretch;flex-direction:column}.pscc-portal .pscc-case-line .pscc-btn{width:100%;white-space:normal}}
