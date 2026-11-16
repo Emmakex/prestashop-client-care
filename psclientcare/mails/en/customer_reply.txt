@@ -1,0 +1,6 @@
+New reply to your issue #{ticket_id}
+Order: {order_ref}
+
+{message_text}
+
+View issue: {ticket_url}

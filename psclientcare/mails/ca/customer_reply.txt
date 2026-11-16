@@ -1,0 +1,6 @@
+Nova resposta a la teva incidència #{ticket_id}
+Comanda: {order_ref}
+
+{message_text}
+
+Veure incidència: {ticket_url}

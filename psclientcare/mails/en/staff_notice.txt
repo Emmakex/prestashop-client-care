@@ -1,0 +1,11 @@
+New customer issue #{ticket_id}
+Order: {order_ref}
+Customer: {customer}
+Email: {email}
+Subject: {subject}
+
+Order items:
+{items_text}
+
+Message:
+{message_text}
