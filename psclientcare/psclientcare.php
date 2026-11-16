@@ -20,7 +20,7 @@ class Psclientcare extends Module
     {
         $this->name = 'psclientcare';
         $this->tab = 'front_office_features';
-        $this->version = '0.1.5';
+        $this->version = '0.1.6';
         $this->author = 'Eduardo Yauri';
         $this->author_uri = 'https://www.eduardoyauriluna.com';
         $this->need_instance = 0;
