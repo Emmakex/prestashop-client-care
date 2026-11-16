@@ -30,13 +30,30 @@ class PsccMailer
         return $fallback ?: (int) $idLang;
     }
 
+    private function recordMailDiagnostic($status, $template)
+    {
+        // Do not store addresses, message bodies, credentials or exception text.
+        $detail = gmdate('Y-m-d H:i:s') . ' UTC | ' . $status . ' | ' . preg_replace('/[^a-z_]/', '', $template);
+        try {
+            Configuration::updateValue('PSCC_LAST_MAIL_DIAGNOSTIC', $detail);
+        } catch (\Throwable $ignored) {
+        }
+        if ($status !== 'accepted') {
+            try {
+                PrestaShopLogger::addLog('psclientcare: mail ' . $status . ' (' . $template . ')', 2);
+            } catch (\Throwable $ignored) {
+            }
+        }
+    }
+
     private function send($langId, $template, $subject, $vars, $email)
     {
         if (!Validate::isEmail($email)) {
+            $this->recordMailDiagnostic('invalid_recipient', $template);
             return false;
         }
         try {
-            return (bool) Mail::Send(
+            $sent = (bool) Mail::Send(
                 $this->languageId($langId),
                 $template,
                 $subject,
@@ -49,12 +66,10 @@ class PsccMailer
                 null,
                 $this->module->getLocalPath() . 'mails/'
             );
+            $this->recordMailDiagnostic($sent ? 'accepted' : 'mail_send_returned_false', $template);
+            return $sent;
         } catch (\Throwable $e) {
-            try {
-                PrestaShopLogger::addLog('psclientcare: email failed: ' . $template, 2);
-            } catch (\Throwable $logError) {
-                // Never turn a failed email into a failed ticket submission.
-            }
+            $this->recordMailDiagnostic('exception_' . strtolower((new \ReflectionClass($e))->getShortName()), $template);
             return false;
         }
     }
