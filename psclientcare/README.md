@@ -16,7 +16,7 @@ Módulo **independiente** para PrestaShop; no requiere Salesforce, CRM externo, 
 
 ## Actualización desde v0.1.0 / v0.1.1 / v0.1.2
 
-Sube el ZIP v0.1.4 desde el gestor de módulos o utiliza la actualización habitual de PrestaShop. **No desinstales v0.1.0**: los pedidos, las incidencias y los códigos de seguimiento conservan sus tablas. v0.1.4 añade una columna `tracking_url` con migración `upgrade/upgrade-0.1.2.php`, conservando códigos de seguimiento, incidencias y mensajes existentes. No desinstales ni reinicies el módulo. v0.1.4 corrige la tarjeta en Mi cuenta (tema Classic), la separación de navegación y estadísticas y el diseño de las filas de pedidos. No modifica las tablas ni la configuración del correo. Vuelve a cargar la página de configuración tras actualizar.
+Sube el ZIP v0.1.4 desde el gestor de módulos o utiliza la actualización habitual de PrestaShop. **No desinstales v0.1.0**: los pedidos, las incidencias y los códigos de seguimiento conservan sus tablas. v0.1.2 añade una columna `tracking_url` con migración `upgrade/upgrade-0.1.2.php`, conservando códigos de seguimiento, incidencias y mensajes existentes. No desinstales ni reinicies el módulo. v0.1.4 corrige la tarjeta en Mi cuenta (tema Classic), la separación de navegación y estadísticas y el diseño de las filas de pedidos. No modifica las tablas ni la configuración del correo. Vuelve a cargar la página de configuración tras actualizar.
 
 ## Instalación
 
