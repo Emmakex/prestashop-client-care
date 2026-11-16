@@ -15,6 +15,10 @@
     <div class="pscc-alert pscc-alert-success" role="status">Incidencia registrada. La notificación por correo ha sido aceptada por PrestaShop.</div>
   {elseif $pscc_notice == 'reply'}
     <div class="pscc-alert pscc-alert-success" role="status">Mensaje guardado. La notificación por correo ha sido aceptada por PrestaShop.</div>
+  {elseif $pscc_notice == 'appended'}
+    <div class="pscc-alert pscc-alert-success" role="status">Tu mensaje se ha incorporado a la incidencia activa de este pedido. No se ha abierto otro expediente.</div>
+  {elseif $pscc_notice == 'archived'}
+    <div class="pscc-alert pscc-alert-success" role="status">Incidencia cerrada y archivada. Su historial sigue disponible y no admite más respuestas.</div>
   {elseif $pscc_notice == 'already_saved'}
     <div class="pscc-alert pscc-alert-success" role="status">Este envío ya estaba registrado. No se ha creado ninguna incidencia ni mensaje duplicado.</div>
   {elseif $pscc_notice == 'saved_no_mail'}
@@ -27,7 +31,7 @@
     </nav>
     <div class="pscc-summary" aria-label="Resumen de tu actividad">
       <div class="pscc-summary-card"><strong>{$pscc_orders|count}</strong><span>Pedidos recientes</span></div>
-      <div class="pscc-summary-card"><strong>{$pscc_tickets|count}</strong><span>Incidencias</span></div>
+      <div class="pscc-summary-card"><strong>{$pscc_order_groups|count}</strong><span>Pedidos con incidencias</span></div>
       <div class="pscc-summary-note"><i class="material-icons" aria-hidden="true">verified_user</i><span>Solo puedes acceder a tus propios pedidos.</span></div>
     </div>
   </div>
@@ -35,18 +39,21 @@
   {if $pscc_ticket}
     <section class="pscc-panel" id="incidencia">
       <div class="pscc-panel-head"><div><a href="{$pscc_home|escape:'htmlall':'UTF-8'}" class="pscc-back">← Todas las incidencias</a><h2>Incidencia #{$pscc_ticket.id_pscc_ticket|intval}</h2><p>Pedido {$pscc_ticket.reference|escape:'htmlall':'UTF-8'} · {$pscc_ticket.subject|escape:'htmlall':'UTF-8'}</p></div>
-        <span class="pscc-pill">{if $pscc_ticket.status == 'open'}Abierta{elseif $pscc_ticket.status == 'in_progress'}En curso{else}Resuelta{/if}</span></div>
+        <span class="pscc-pill">{if $pscc_ticket.status == 'open'}Abierta{elseif $pscc_ticket.status == 'in_progress'}En curso{else}Cerrada · Archivada{/if}</span></div>
       {if $pscc_selected_products}
         <p><strong>Productos relacionados:</strong> {foreach $pscc_selected_products as $p name=affected}{$p.product_name|escape:'htmlall':'UTF-8'} (×{$p.product_quantity|intval}){if !$smarty.foreach.affected.last}; {/if}{/foreach}</p>
       {/if}
-      <div class="pscc-thread" role="log" aria-label="Mensajes de la incidencia">
+      <h3>Historial de conversaciones de este pedido</h3>
+      <p class="pscc-field-help">Los mensajes anteriores del mismo pedido aparecen ordenados por fecha, conservando su número de incidencia original.</p>
+      <div class="pscc-thread" role="log" aria-label="Historial conjunto de incidencias del pedido">
         {foreach $pscc_thread as $msg}
           <div class="pscc-message {if $msg.sender == 'customer'}pscc-from-customer{else}pscc-from-shop{/if}">
-            <div class="pscc-message-head"><strong>{if $msg.sender == 'customer'}Tú{else}Atención al cliente{/if}</strong><time>{$msg.date_add|escape:'htmlall':'UTF-8'}</time></div>
+            <div class="pscc-message-head"><strong>{if $msg.sender == 'customer'}Tú{else}Atención al cliente{/if} · Incidencia #{$msg.id_pscc_ticket|intval}</strong><time>{$msg.date_add|escape:'htmlall':'UTF-8'}</time></div>
             <p>{$msg.message|escape:'htmlall':'UTF-8'|nl2br nofilter}</p>
           </div>
         {/foreach}
       </div>
+      {if $pscc_ticket.status == 'open' || $pscc_ticket.status == 'in_progress'}
       <form method="post" action="{$pscc_ticket_form_url|escape:'htmlall':'UTF-8'}" class="pscc-form">
         <input type="hidden" name="pscc_action" value="reply">
         <input type="hidden" name="pscc_request_key" value="{$pscc_request_reply|escape:'htmlall':'UTF-8'}">
@@ -57,6 +64,16 @@
         <textarea name="pscc_message" id="pscc_message_reply" rows="4" minlength="10" maxlength="4000" aria-describedby="pscc-reply-help" required placeholder="Explica cualquier detalle adicional..."></textarea>
         <button class="pscc-btn" type="submit">Enviar mensaje</button>
       </form>
+      <form method="post" action="{$pscc_ticket_form_url|escape:'htmlall':'UTF-8'}" class="pscc-archive-form">
+        <input type="hidden" name="pscc_action" value="archive">
+        <input type="hidden" name="ticket_id" value="{$pscc_ticket.id_pscc_ticket|intval}">
+        <input type="hidden" name="pscc_token" value="{$pscc_token|escape:'htmlall':'UTF-8'}">
+        <button class="pscc-btn pscc-btn-outline" type="submit" aria-label="Cerrar y archivar la incidencia {$pscc_ticket.id_pscc_ticket|intval}">Cerrar y archivar incidencia</button>
+        <p class="pscc-field-help">Esta conversación pasará al histórico del pedido y ya no admitirá nuevas respuestas.</p>
+      </form>
+      {else}
+        <div class="pscc-archived-note" role="status">Esta incidencia está cerrada y archivada. Puedes consultar su historial, pero no añadir mensajes nuevos.</div>
+      {/if}
     </section>
   {/if}
 
@@ -74,6 +91,13 @@
         </div>
       {/if}
       <h3>Productos comprados</h3>
+      {if $pscc_order_active}
+        <div class="pscc-existing-case" role="status">
+          <strong>Este pedido ya tiene una incidencia activa.</strong>
+          <p>Para conservar una única conversación abierta, envía los siguientes mensajes desde su historial. Las incidencias anteriores siguen agrupadas por pedido.</p>
+          <a class="pscc-btn" href="{$pscc_order_active.portal_url|escape:'htmlall':'UTF-8'}">Continuar incidencia #{$pscc_order_active.id_pscc_ticket|intval}</a>
+        </div>
+      {else}
       <form method="post" action="{$pscc_order_form_url|escape:'htmlall':'UTF-8'}" class="pscc-form">
         <input type="hidden" name="pscc_action" value="create">
         <input type="hidden" name="pscc_request_key" value="{$pscc_request_create|escape:'htmlall':'UTF-8'}">
@@ -95,6 +119,7 @@
         <textarea id="pscc_message_new" name="pscc_message" rows="5" minlength="10" maxlength="4000" aria-describedby="pscc-message-help" required placeholder="Describe la incidencia con el máximo detalle posible..."></textarea>
         <button class="pscc-btn" type="submit">Registrar incidencia</button>
       </form>
+      {/if}
     </section>
   {/if}
 
@@ -133,11 +158,32 @@
   <section class="pscc-panel" id="pscc-tickets" aria-labelledby="pscc-tickets-heading">
     <div class="pscc-panel-head"><div><h2 id="pscc-tickets-heading">Mis incidencias</h2><p>Historial de mensajes y respuestas de la tienda.</p></div><i class="material-icons" aria-hidden="true">forum</i></div>
     {if !$pscc_tickets}<div class="pscc-empty">Aún no has registrado incidencias.</div>{/if}
-    <div class="pscc-order-list">
-      {foreach $pscc_tickets as $t}
-        <article class="pscc-order-row"><div class="pscc-order-main"><strong>#{$t.id_pscc_ticket|intval} · {$t.subject|escape:'htmlall':'UTF-8'}</strong><small>Pedido {$t.reference|escape:'htmlall':'UTF-8'} · {$t.date_upd|escape:'htmlall':'UTF-8'}</small></div>
-          <span class="pscc-pill">{if $t.status == 'open'}Abierta{elseif $t.status == 'in_progress'}En curso{else}Resuelta{/if}</span>
-          <a class="pscc-btn pscc-btn-outline" href="{$t.portal_url|escape:'htmlall':'UTF-8'}">Ver conversación</a>
+    <div class="pscc-ticket-groups">
+      {foreach $pscc_order_groups as $g}
+        <article class="pscc-case-group">
+          <header class="pscc-case-group-head">
+            <div><span class="pscc-order-kicker">PEDIDO</span><h3>{$g.reference|escape:'htmlall':'UTF-8'}</h3></div>
+            <span class="pscc-case-count">{$g.total|intval} incidencia(s) en el historial</span>
+          </header>
+          {foreach $g.active as $t}
+            <div class="pscc-case-line">
+              <div><strong>#{$t.id_pscc_ticket|intval} · {$t.subject|escape:'htmlall':'UTF-8'}</strong>
+                <small>{$t.date_upd|escape:'htmlall':'UTF-8'} · {if $t.status == 'open'}Abierta{else}En curso{/if}</small></div>
+              <a class="pscc-btn pscc-btn-outline" href="{$t.portal_url|escape:'htmlall':'UTF-8'}">Ver conversación</a>
+            </div>
+          {/foreach}
+          {if $g.archive}
+            <details class="pscc-case-archive">
+              <summary>Histórico archivado ({$g.archive|count})</summary>
+              {foreach $g.archive as $t}
+                <div class="pscc-case-line">
+                  <div><strong>#{$t.id_pscc_ticket|intval} · {$t.subject|escape:'htmlall':'UTF-8'}</strong>
+                    <small>{$t.date_upd|escape:'htmlall':'UTF-8'} · Cerrada / Histórica</small></div>
+                  <a class="pscc-btn pscc-btn-outline" href="{$t.portal_url|escape:'htmlall':'UTF-8'}">Consultar histórico</a>
+                </div>
+              {/foreach}
+            </details>
+          {/if}
         </article>
       {/foreach}
     </div>
