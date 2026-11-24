@@ -1,0 +1,64 @@
+name: Module CI
+on:
+  push:
+    branches: [main, 'feat/**']
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Require module source
+        run: |
+          test -f psclientcare/psclientcare.php || { echo "Module source has not been committed"; exit 1; }
+      - name: PHP syntax
+        run: |
+          find psclientcare -type f -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Back Office CSRF regression
+        run: php tests/admin-csrf.php
+      - name: Keep configurable incident recipient using PrestaShop email
+        run: php tests/recipient-configuration.php
+      - name: Tracking URL and upgrade regression
+        run: |
+          php tests/tracking-url-test.php
+          php tests/migration-test.php
+      - name: Verify version and migration packaged
+        run: |
+          grep -Fq "\$this->version = '0.1.6';" psclientcare/psclientcare.php
+          grep -q 'function upgrade_module_0_1_2' psclientcare/upgrade/upgrade-0.1.2.php
+          test -f psclientcare/config.xml
+          grep -q 'function upgrade_module_0_1_3' psclientcare/upgrade/upgrade-0.1.3.php
+          grep -q 'function upgrade_module_0_1_4' psclientcare/upgrade/upgrade-0.1.4.php
+          grep -q 'function upgrade_module_0_1_5' psclientcare/upgrade/upgrade-0.1.5.php
+          grep -q 'function upgrade_module_0_1_6' psclientcare/upgrade/upgrade-0.1.6.php
+      - name: UX, author and mail configuration regression
+        run: php tests/metadata-and-ux.php
+      - name: Idempotency and mail failure regression
+        run: |
+          php tests/idempotency.php
+          php tests/mail-failure.php
+      - name: Archive and grouped-order history regression
+        run: php tests/archive-and-order-history.php
+      - name: Dashboard layout regression
+        run: php tests/dashboard-layout.php
+      - name: Validate proprietary license and attribution
+        run: php tests/license-contract.php
+      - name: Check module entry and guards
+        run: |
+          grep -q "class Psclientcare extends Module" psclientcare/psclientcare.php
+          grep -q "displayCustomerAccount" psclientcare/psclientcare.php
+          grep -q "id_customer" psclientcare/classes/PsccRepository.php
+          grep -q "id_shop" psclientcare/classes/PsccRepository.php
+      - name: Build installable ZIP
+        run: |
+          mkdir -p dist
+          zip -q -r dist/psclientcare-ci.zip psclientcare/
+          unzip -t dist/psclientcare-ci.zip
+      - name: Upload installable ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: psclientcare-ci
+          path: dist/psclientcare-ci.zip

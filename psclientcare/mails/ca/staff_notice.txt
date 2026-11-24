@@ -1,0 +1,11 @@
+Nova incidència de client #{ticket_id}
+Comanda: {order_ref}
+Client: {customer}
+Correu electrònic: {email}
+Assumpte: {subject}
+
+Productes de la comanda:
+{items_text}
+
+Missatge:
+{message_text}

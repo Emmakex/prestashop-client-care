@@ -1,0 +1,10 @@
+# Generated packages and local runtime
+/dist/
+/build/
+/vendor/
+/node_modules/
+*.log
+.env
+.env.*
+!.env.example
+.DS_Store

@@ -1,0 +1,11 @@
+Nueva incidencia de cliente #{ticket_id}
+Pedido: {order_ref}
+Cliente: {customer}
+Correo electrónico: {email}
+Asunto: {subject}
+
+Productos del pedido:
+{items_text}
+
+Mensaje:
+{message_text}
