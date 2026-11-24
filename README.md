@@ -31,3 +31,11 @@ Beta inicial pendiente de integración y pruebas reales en una tienda de staging
 ## Notas de privacidad
 
 Antes de incorporar configuración o integraciones privadas, comprobar que el repositorio sea **privado**. Los datos de incidencias deben permanecer en la base de datos de PrestaShop, no en GitHub.
+
+## Titularidad y licencia
+
+**Copyright © 2026 Eduardo Yauri. Todos los derechos reservados.**
+
+PS Client Care es software **propietario**. El repositorio público no otorga permiso para redistribuir, vender, sublicenciar o modificar el código sin autorización escrita. Consulta [LICENSE](LICENSE). Las condiciones de componentes de terceros y derechos concedidos válidamente en versiones anteriores se mantienen.
+
+Autor: [Eduardo Yauri](https://www.eduardoyauriluna.com).

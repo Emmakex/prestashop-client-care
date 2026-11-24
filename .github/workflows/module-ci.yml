@@ -44,6 +44,8 @@ jobs:
         run: php tests/archive-and-order-history.php
       - name: Dashboard layout regression
         run: php tests/dashboard-layout.php
+      - name: Validate proprietary license and attribution
+        run: php tests/license-contract.php
       - name: Check module entry and guards
         run: |
           grep -q "class Psclientcare extends Module" psclientcare/psclientcare.php

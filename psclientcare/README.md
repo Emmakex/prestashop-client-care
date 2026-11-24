@@ -98,3 +98,11 @@ Los registros históricos de productos y cantidades **se obtienen de `order_deta
 - Agrupación de los expedientes anteriores por pedido y cronología conjunta de sus mensajes, sin fusionar ni eliminar registros originales.
 - Diagnóstico seguro del último resultado de correo en administración, usando siempre Mail::Send y PSCC_RECIPIENT.
 - Actualización sin modificar tablas existentes ni códigos de seguimiento.
+
+## Licencia y autoría
+
+**Copyright © 2026 Eduardo Yauri — Todos los derechos reservados.**
+
+Licencia propietaria. La instalación y ejecución están permitidas únicamente dentro del alcance de una autorización del titular. No se concede permiso general para redistribución, comercialización o modificación. Condiciones completas en [LICENSE](LICENSE) (también presente en la raíz del repositorio).
+
+La distribución bajo esta licencia no revoca permisos válidamente concedidos en publicaciones anteriores. El código y los recursos de terceros conservan sus licencias originales.

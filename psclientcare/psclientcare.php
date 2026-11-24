@@ -1,7 +1,10 @@
 <?php
 /**
  * PS Client Care — incidencias y seguimiento de pedidos.
- * License: MIT. Independent PrestaShop module; no core overrides.
+ * Copyright (c) 2026 Eduardo Yauri. Todos los derechos reservados.
+ * License: Proprietary; see LICENSE for authorized use and redistribution terms.
+ * https://www.eduardoyauriluna.com
+ * Independent PrestaShop module; no core overrides.
  */
 if (!defined('_PS_VERSION_')) {
     exit;
